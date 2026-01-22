@@ -1,4 +1,4 @@
-import Redis from 'ioredis';
+import { Redis } from 'ioredis';
 import { env } from '../config/env.config.js';
 
 const globalForRedis = globalThis as unknown as {

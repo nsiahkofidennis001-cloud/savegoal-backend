@@ -11,6 +11,8 @@ import { error } from '../shared/utils/response.util.js';
 import healthRoutes from './routes/v1/health.routes.js';
 import authRoutes from '../modules/auth/auth.routes.js';
 import phoneOtpRoutes from '../modules/auth/phone/phone-otp.routes.js';
+import walletRoutes from '../modules/wallet/wallet.routes.js';
+import goalsRoutes from '../modules/goals/goals.routes.js';
 
 const app = express();
 
@@ -45,6 +47,12 @@ app.use(authRoutes);
 
 // Phone OTP routes
 app.use('/api/auth/phone', phoneOtpRoutes);
+
+// Wallet routes
+app.use('/api/wallet', walletRoutes);
+
+// Goal routes
+app.use('/api/goals', goalsRoutes);
 
 // ==================== ERROR HANDLING ====================
 

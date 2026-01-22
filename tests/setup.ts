@@ -8,9 +8,3 @@ beforeAll(() => {
     process.env.BETTER_AUTH_SECRET = 'test-secret-key-for-testing-32ch';
     process.env.BETTER_AUTH_URL = 'http://localhost:3000';
 });
-
-afterAll(async () => {
-    // Cleanup after tests
-});
-
-export { };
