@@ -11,8 +11,11 @@ export const redis =
         maxRetriesPerRequest: 3,
     });
 
-redis.on('error', (err) => {
-    console.error('Redis connection error:', err);
+redis.on('error', (err: any) => {
+    // Only log if it's not a connection refused (to avoid spamming logs during dev)
+    if (err.code !== 'ECONNREFUSED') {
+        console.error('Redis connection error:', err);
+    }
 });
 
 redis.on('connect', () => {

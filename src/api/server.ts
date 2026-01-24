@@ -13,6 +13,7 @@ import authRoutes from '../modules/auth/auth.routes.js';
 import phoneOtpRoutes from '../modules/auth/phone/phone-otp.routes.js';
 import walletRoutes from '../modules/wallet/wallet.routes.js';
 import goalsRoutes from '../modules/goals/goals.routes.js';
+import paymentRoutes from '../modules/payments/payment.routes.js';
 
 const app = express();
 
@@ -53,6 +54,9 @@ app.use('/api/wallet', walletRoutes);
 
 // Goal routes
 app.use('/api/goals', goalsRoutes);
+
+// Payment routes
+app.use('/api/payments', paymentRoutes);
 
 // ==================== ERROR HANDLING ====================
 

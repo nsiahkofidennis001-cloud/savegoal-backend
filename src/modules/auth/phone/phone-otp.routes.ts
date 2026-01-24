@@ -8,9 +8,9 @@ import { auth } from '../auth.js';
 
 const router = Router();
 
-// Initialize Twilio client (only if credentials are provided)
+// Initialize Twilio client (only if valid credentials are provided)
 const twilioClient =
-    env.TWILIO_ACCOUNT_SID && env.TWILIO_AUTH_TOKEN
+    env.TWILIO_ACCOUNT_SID?.startsWith('AC') && env.TWILIO_AUTH_TOKEN
         ? Twilio(env.TWILIO_ACCOUNT_SID, env.TWILIO_AUTH_TOKEN)
         : null;
 
