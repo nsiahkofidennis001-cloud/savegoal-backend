@@ -13,7 +13,7 @@ const router = Router();
  */
 router.post('/deposit', requireAuth, async (req: Request, res: Response) => {
     try {
-        const userId = req.body.user.id;
+        const userId = req.user!.id;
         const { amount } = req.body;
 
         if (!amount || typeof amount !== 'number' || amount <= 0) {
