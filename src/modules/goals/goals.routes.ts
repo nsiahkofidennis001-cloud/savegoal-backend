@@ -13,7 +13,7 @@ router.use(requireAuth);
  */
 router.get('/', async (req: Request, res: Response) => {
     try {
-        const userId = req.body.user.id;
+        const userId = req.user!.id;
         const goals = await GoalsService.getUserGoals(userId);
         return success(res, goals);
     } catch (err: any) {
@@ -27,7 +27,7 @@ router.get('/', async (req: Request, res: Response) => {
  */
 router.post('/', async (req: Request, res: Response) => {
     try {
-        const userId = req.body.user.id;
+        const userId = req.user!.id;
         const { name, targetAmount, deadline, description } = req.body;
 
         if (!name || !targetAmount) {
@@ -52,7 +52,7 @@ router.post('/', async (req: Request, res: Response) => {
  */
 router.get('/:id', async (req: Request, res: Response) => {
     try {
-        const userId = req.body.user.id;
+        const userId = req.user!.id;
         const goal = await GoalsService.getGoal(userId, req.params.id);
         return success(res, goal);
     } catch (err: any) {
@@ -66,7 +66,7 @@ router.get('/:id', async (req: Request, res: Response) => {
  */
 router.post('/:id/fund', async (req: Request, res: Response) => {
     try {
-        const userId = req.body.user.id;
+        const userId = req.user!.id;
         const { amount } = req.body;
 
         if (!amount || typeof amount !== 'number') {

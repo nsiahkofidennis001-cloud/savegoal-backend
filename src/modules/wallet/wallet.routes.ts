@@ -14,7 +14,7 @@ router.use(requireAuth);
  */
 router.get('/', async (req: Request, res: Response) => {
     try {
-        const userId = req.body.user.id; // Injected by requireAuth/better-auth
+        const userId = req.user!.id; // Injected by requireAuth/better-auth
         const wallet = await WalletService.getWallet(userId);
         return success(res, wallet);
     } catch (err: any) {
@@ -29,7 +29,7 @@ router.get('/', async (req: Request, res: Response) => {
  */
 router.post('/deposit', async (req: Request, res: Response) => {
     try {
-        const userId = req.body.user.id;
+        const userId = req.user!.id;
         const { amount } = req.body;
 
         if (!amount || typeof amount !== 'number') {

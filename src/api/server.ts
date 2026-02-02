@@ -43,11 +43,11 @@ app.use('/api', standardLimiter);
 // Health checks
 app.use('/health', healthRoutes);
 
+// Phone OTP routes (Must be before generic auth catch-all)
+app.use('/api/auth/phone', phoneOtpRoutes);
+
 // Auth routes (better-auth)
 app.use(authRoutes);
-
-// Phone OTP routes
-app.use('/api/auth/phone', phoneOtpRoutes);
 
 // Wallet routes
 app.use('/api/wallet', walletRoutes);

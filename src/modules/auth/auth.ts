@@ -1,4 +1,5 @@
 import { betterAuth } from 'better-auth';
+import { bearer } from 'better-auth/plugins';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { prisma } from '../../infra/prisma.client.js';
 import { CONSTANTS } from '../../config/constants.js';
@@ -42,6 +43,7 @@ export const auth = betterAuth({
     advanced: {
         // generateId removed as it is not a valid option
     },
+    plugins: [bearer()],
 });
 
 export type Session = typeof auth.$Infer.Session.session;
