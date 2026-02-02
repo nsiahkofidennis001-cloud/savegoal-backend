@@ -85,10 +85,31 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
 
 const PORT = parseInt(env.PORT, 10);
 
-app.listen(PORT, () => {
-    console.info(`🚀 SaveGoal API running on port ${PORT}`);
-    console.info(`📍 Environment: ${env.NODE_ENV}`);
-    console.info(`🔗 Health check: http://localhost:${PORT}/health`);
-});
+async function startServer() {
+    try {
+        console.info('🔍 Running pre-flight checks...');
+
+        // Check Database
+        const { prisma } = await import('../infra/prisma.client.js');
+        await prisma.$queryRaw`SELECT 1`;
+        console.info('✅ Database connection established');
+
+        // Check Redis
+        const { redis } = await import('../infra/redis.client.js');
+        await redis.ping();
+        console.info('✅ Redis connection established');
+
+        app.listen(PORT, () => {
+            console.info(`🚀 SaveGoal API running on port ${PORT}`);
+            console.info(`📍 Environment: ${env.NODE_ENV}`);
+            console.info(`🔗 Health check: http://localhost:${PORT}/health`);
+        });
+    } catch (err) {
+        console.error('❌ Failed to start server:', err);
+        process.exit(1);
+    }
+}
+
+startServer();
 
 export default app;

@@ -1,6 +1,9 @@
 # Build stage
 FROM node:20-alpine AS builder
 
+# Install system dependencies
+RUN apk add --no-cache openssl libc6-compat
+
 WORKDIR /app
 
 # Copy package files
@@ -20,6 +23,9 @@ RUN npm run build
 # Production stage
 FROM node:20-alpine
 
+# Install system dependencies for production
+RUN apk add --no-cache openssl
+
 WORKDIR /app
 
 # Copy package files and install production dependencies only
@@ -30,6 +36,7 @@ RUN npm install --omit=dev
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/@prisma/client ./node_modules/@prisma/client
 
 # Environment variables
 ENV NODE_ENV=production

@@ -7,6 +7,7 @@ const envSchema = z.object({
 
     // Database
     DATABASE_URL: z.string().url(),
+    DIRECT_URL: z.string().url().optional(),
 
     // Redis
     REDIS_URL: z.string().url(),
@@ -25,8 +26,14 @@ const envSchema = z.object({
 const parsed = envSchema.safeParse(process.env);
 
 if (!parsed.success) {
-    console.error('❌ Invalid environment variables:', parsed.error.flatten().fieldErrors);
-    throw new Error('Invalid environment variables');
+    const flattenedErrors = parsed.error.flatten().fieldErrors;
+    console.error('❌ Invalid environment variables:', JSON.stringify(flattenedErrors, null, 2));
+
+    // Log helpful message for Render users
+    const missingKeys = Object.keys(flattenedErrors);
+    console.error(`Missing or invalid environment variables: ${missingKeys.join(', ')}`);
+
+    throw new Error(`Invalid environment variables: ${missingKeys.join(', ')}`);
 }
 
 export const env = parsed.data;
