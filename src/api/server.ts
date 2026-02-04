@@ -91,8 +91,13 @@ async function startServer() {
 
         // Check Database
         const { prisma } = await import('../infra/prisma.client.js');
-        await prisma.$queryRaw`SELECT 1`;
-        console.info('✅ Database connection established');
+        try {
+            await prisma.$queryRaw`SELECT 1`;
+            console.info('✅ Database connection established');
+        } catch (dbErr) {
+            console.error('❌ Database connection failed:', dbErr);
+            throw dbErr;
+        }
 
         // Check Redis
         const { redis } = await import('../infra/redis.client.js');
