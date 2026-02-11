@@ -1,40 +1,33 @@
+
 generator client {
-  provider      = "prisma-client-js"
-  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+  provider = "prisma-client-js"
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
+
 // ==================== BETTER-AUTH TABLES ====================
-// These tables are managed by better-auth
 
 model User {
-  id            String    @id @default(uuid())
-  name          String
-  email         String    @unique
-  emailVerified Boolean   @default(false)
-  image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id             String    @id @default(uuid())
+  name           String
+  email          String    @unique
+  emailVerified  Boolean   @default(false)
+  image          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  phone          String?   @unique
+  role           UserRole  @default(CONSUMER)
 
-  // Custom fields for SaveGoal
-  phone         String?   @unique
-  role          UserRole  @default(CONSUMER)
-
-  // Relations
-  sessions      Session[]
-  accounts      Account[]
-  profile       Profile?
+  sessions       Session[]
+  accounts       Account[]
+  profile        Profile?
   merchantProfile MerchantProfile?
-  wallet        Wallet?
-  goals         Goal[]
-
-  @@index([email])
-  @@index([phone])
+  wallet         Wallet?
+  goals          Goal[]
 }
 
 model Session {
@@ -47,9 +40,6 @@ model Session {
   userAgent String?
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([token])
 }
 
 model Account {
@@ -67,8 +57,6 @@ model Account {
   password              String?
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
-
-  @@index([userId])
 }
 
 model Verification {
@@ -78,8 +66,6 @@ model Verification {
   expiresAt  DateTime
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
-
-  @@index([identifier])
 }
 
 // ==================== CUSTOM SAVEGOAL TABLES ====================
@@ -109,7 +95,6 @@ model Profile {
   kycStatus   KYCStatus @default(PENDING)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
@@ -128,11 +113,10 @@ model MerchantProfile {
   balance         Decimal   @default(0) @db.Decimal(12, 2)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
-
   user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-// ==================== PHASE 2: CORE SAVINGS MODELS ====================
+// ==================== CORE SAVINGS MODELS ====================
 
 model Wallet {
   id        String   @id @default(uuid())
@@ -141,7 +125,6 @@ model Wallet {
   balance   Decimal  @default(0.00) @db.Decimal(12, 2)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions Transaction[]
 }
@@ -163,11 +146,10 @@ model Goal {
   currency      String     @default("GHS")
   deadline      DateTime?
   status        GoalStatus @default(ACTIVE)
-  icon          String? // E.g., emoji or image URL
-  color         String? // Hex code for UI
+  icon          String?
+  color         String?
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
-
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions Transaction[]
 }
@@ -189,20 +171,15 @@ enum TransactionStatus {
 model Transaction {
   id              String            @id @default(uuid())
   walletId        String
-  goalId          String? // Optional: some transactions linked to a goal
+  goalId          String?
   type            TransactionType
   amount          Decimal           @db.Decimal(12, 2)
   currency        String            @default("GHS")
-  reference       String? // External reference (e.g., payment gateway ID)
-  status          TransactionStatus @default(COMPLETED) // Internal txs are completed instantly
-  metadata        Json? // Store extra details (e.g., fees, sender info)
+  reference       String?
+  status          TransactionStatus @default(COMPLETED)
+  metadata        Json?
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
-
   wallet Wallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
   goal   Goal?  @relation(fields: [goalId], references: [id])
-
-  @@index([walletId])
-  @@index([goalId])
-  @@index([type])
 }
