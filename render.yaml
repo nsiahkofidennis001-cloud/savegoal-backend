@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: savegoal-backend
+    env: docker
+    plan: free
+    region: frankfurt
+    buildCommand: docker build -t savegoal-backend .
+    startCommand: npm start
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: BETTER_AUTH_SECRET
+        sync: false
+      - key: BETTER_AUTH_URL
+        value: https://savegoal-backend.onrender.com
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
