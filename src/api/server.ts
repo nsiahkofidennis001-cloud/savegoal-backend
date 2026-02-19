@@ -13,6 +13,7 @@ import { error } from '../shared/utils/response.util.js';
 import healthRoutes from './routes/v1/health.routes.js';
 import authRoutes from '../modules/auth/auth.routes.js';
 import phoneOtpRoutes from '../modules/auth/phone/phone-otp.routes.js';
+import emailAuthRoutes from '../modules/auth/email/email-auth.routes.js';
 import walletRoutes from '../modules/wallet/wallet.routes.js';
 import goalsRoutes from '../modules/goals/goals.routes.js';
 import paymentRoutes from '../modules/payments/payment.routes.js';
@@ -63,6 +64,9 @@ app.use('/health', healthRoutes);
 
 // Phone OTP routes (Must be before generic auth catch-all)
 app.use('/api/auth/phone', phoneOtpRoutes);
+
+// Email Auth routes
+app.use('/api/auth/email', emailAuthRoutes);
 
 // Auth routes (better-auth)
 app.use(authRoutes);

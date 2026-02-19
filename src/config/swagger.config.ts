@@ -100,6 +100,152 @@ const swaggerDefinition: swaggerJsdoc.OAS3Definition = {
             },
         },
 
+        // ==================== AUTH - EMAIL ====================
+        '/api/auth/email/signup': {
+            post: {
+                tags: ['Auth - Email'],
+                summary: 'Register with email and password',
+                description: 'Creates a new user account and wallet. Returns session token.',
+                requestBody: {
+                    required: true,
+                    content: {
+                        'application/json': {
+                            schema: {
+                                type: 'object',
+                                required: ['email', 'password', 'name'],
+                                properties: {
+                                    email: {
+                                        type: 'string',
+                                        format: 'email',
+                                        example: 'user@example.com',
+                                    },
+                                    password: {
+                                        type: 'string',
+                                        format: 'password',
+                                        example: 'Password123!',
+                                        minLength: 8,
+                                    },
+                                    name: {
+                                        type: 'string',
+                                        example: 'John Doe',
+                                    },
+                                    phone: {
+                                        type: 'string',
+                                        example: '+233546351309',
+                                        description: 'Optional phone number',
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+                responses: {
+                    '200': {
+                        description: 'User registered successfully',
+                        content: {
+                            'application/json': {
+                                schema: {
+                                    type: 'object',
+                                    properties: {
+                                        success: { type: 'boolean', example: true },
+                                        data: {
+                                            type: 'object',
+                                            properties: {
+                                                user: {
+                                                    type: 'object',
+                                                    properties: {
+                                                        id: { type: 'string' },
+                                                        email: { type: 'string' },
+                                                        name: { type: 'string' },
+                                                        role: { type: 'string' },
+                                                    },
+                                                },
+                                                session: {
+                                                    type: 'object',
+                                                    properties: {
+                                                        token: { type: 'string' },
+                                                        expiresAt: { type: 'string' },
+                                                    },
+                                                },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    '400': { description: 'Validation error or email already exists' },
+                },
+            },
+        },
+        '/api/auth/email/signin': {
+            post: {
+                tags: ['Auth - Email'],
+                summary: 'Login with email and password',
+                description: 'Authenticates user and returns session token.',
+                requestBody: {
+                    required: true,
+                    content: {
+                        'application/json': {
+                            schema: {
+                                type: 'object',
+                                required: ['email', 'password'],
+                                properties: {
+                                    email: {
+                                        type: 'string',
+                                        format: 'email',
+                                        example: 'user@example.com',
+                                    },
+                                    password: {
+                                        type: 'string',
+                                        format: 'password',
+                                        example: 'Password123!',
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+                responses: {
+                    '200': {
+                        description: 'Login successful',
+                        content: {
+                            'application/json': {
+                                schema: {
+                                    type: 'object',
+                                    properties: {
+                                        success: { type: 'boolean', example: true },
+                                        data: {
+                                            type: 'object',
+                                            properties: {
+                                                user: {
+                                                    type: 'object',
+                                                    properties: {
+                                                        id: { type: 'string' },
+                                                        email: { type: 'string' },
+                                                        name: { type: 'string' },
+                                                        role: { type: 'string' },
+                                                    },
+                                                },
+                                                session: {
+                                                    type: 'object',
+                                                    properties: {
+                                                        token: { type: 'string' },
+                                                        expiresAt: { type: 'string' },
+                                                    },
+                                                },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    '401': { description: 'Invalid email or password' },
+                },
+            },
+        },
+
         // ==================== AUTH - PHONE OTP ====================
         '/api/auth/phone/send-otp': {
             post: {
