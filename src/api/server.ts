@@ -2,7 +2,9 @@ import 'dotenv/config';
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import swaggerUi from 'swagger-ui-express';
 import { env } from '../config/env.config.js';
+import { swaggerSpec } from '../config/swagger.config.js';
 import { standardLimiter, authLimiter } from './middlewares/rateLimit.middleware.js';
 import { ApiException } from '../shared/exceptions/api.exception.js';
 import { error } from '../shared/utils/response.util.js';
@@ -19,8 +21,12 @@ const app = express();
 
 // ==================== MIDDLEWARE ====================
 
-// Security headers
-app.use(helmet());
+// Security headers (relaxed CSP for Swagger UI)
+app.use(
+    helmet({
+        contentSecurityPolicy: env.NODE_ENV === 'production' ? undefined : false,
+    })
+);
 
 // CORS
 app.use(
@@ -39,6 +45,18 @@ app.use('/api/auth', authLimiter);
 app.use('/api', standardLimiter);
 
 // ==================== ROUTES ====================
+
+// Swagger API docs
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+    customSiteTitle: 'SaveGoal API Docs',
+    customCss: '.swagger-ui .topbar { display: none }',
+}));
+
+// Swagger JSON endpoint
+app.get('/api-docs.json', (_req: Request, res: Response) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.send(swaggerSpec);
+});
 
 // Health checks
 app.use('/health', healthRoutes);
@@ -95,8 +113,14 @@ async function startServer() {
             await prisma.$queryRaw`SELECT 1`;
             console.info('✅ Database connection established');
         } catch (dbErr) {
-            console.error('❌ Database connection failed:', dbErr);
-            throw dbErr;
+            if (env.NODE_ENV === 'production') {
+                console.error('❌ Database connection failed:', dbErr);
+                throw dbErr;
+            } else {
+                console.warn('⚠️ Database unreachable (local network cannot reach Supabase).');
+                console.warn('   Routes requiring DB will fail, but server will start for local dev.');
+                console.warn('   Use a VPN or deploy to Render to test DB-dependent routes.');
+            }
         }
 
         // Check Redis

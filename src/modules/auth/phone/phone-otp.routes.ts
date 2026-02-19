@@ -79,15 +79,21 @@ router.post('/send-otp', async (req: Request, res: Response) => {
                 from: env.TWILIO_PHONE_NUMBER,
                 to: phone,
             });
+            return res.json({
+                success: true,
+                data: { message: 'OTP sent successfully' },
+            });
         } else {
-            // Development mode - log OTP
+            // Development mode - return OTP in response for easy testing
             console.info(`[DEV] OTP for ${phone}: ${otp}`);
+            return res.json({
+                success: true,
+                data: {
+                    message: 'OTP sent successfully (DEV MODE - OTP returned in response)',
+                    devOtp: otp,
+                },
+            });
         }
-
-        return res.json({
-            success: true,
-            data: { message: 'OTP sent successfully' },
-        });
     } catch (error) {
         console.error('Send OTP error:', error);
         return res.status(500).json({
