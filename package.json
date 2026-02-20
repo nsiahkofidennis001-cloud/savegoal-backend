@@ -7,8 +7,7 @@
     "scripts": {
         "dev": "tsx watch src/api/server.ts",
         "build": "tsc",
-        "start": "npx prisma migrate deploy && node dist/api/server.js",
-        "lint": "eslint src --ext .ts",
+        "start": "npx prisma db push --accept-data-loss && node dist/api/server.js",
         "lint": "eslint src --ext .ts",
         "lint:fix": "eslint src --ext .ts --fix",
         "format": "prettier --write \"src/**/*.ts\"",
