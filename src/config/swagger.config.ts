@@ -9,12 +9,12 @@ const swaggerDefinition: swaggerJsdoc.OAS3Definition = {
     },
     servers: [
         {
-            url: 'http://localhost:3000',
-            description: 'Local Development',
-        },
-        {
             url: 'https://savegoal-backend-2.onrender.com',
             description: 'Production (Render)',
+        },
+        {
+            url: 'http://localhost:3000',
+            description: 'Local Development',
         },
     ],
     components: {
