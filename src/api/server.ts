@@ -59,6 +59,17 @@ app.get('/api-docs.json', (_req: Request, res: Response) => {
     res.send(swaggerSpec);
 });
 
+// Root route
+app.get('/', (_req: Request, res: Response) => {
+    res.json({
+        success: true,
+        message: 'Welcome to SaveGoal API',
+        version: '1.0.0',
+        documentation: '/api-docs',
+        status: 'healthy'
+    });
+});
+
 // Health checks
 app.use('/health', healthRoutes);
 
