@@ -23,6 +23,7 @@ import automationRoutes from '../modules/automation/automation.routes.js';
 import adminRoutes from '../modules/admin/admin.routes.js';
 import kycRoutes from '../modules/kyc/kyc.routes.js';
 import payoutRoutes from '../modules/wallet/payout.routes.js';
+import notificationRoutes from '../modules/notifications/notification.routes.js';
 
 const app = express();
 
@@ -114,6 +115,9 @@ app.use('/api/kyc', kycRoutes);
 
 // Payout routes
 app.use('/api/payouts', payoutRoutes);
+
+// Notification routes
+app.use('/api/notifications', notificationRoutes);
 
 // ==================== ERROR HANDLING ====================
 

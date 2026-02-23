@@ -1,6 +1,8 @@
 import { prisma } from '../../infra/prisma.client.js';
 import { ApiException } from '../../shared/exceptions/api.exception.js';
 
+import { NotificationService } from '../notifications/notification.service.js';
+
 export class AdminService {
     /**
      * Get aggregate system statistics
@@ -171,6 +173,24 @@ export class AdminService {
                 await tx.merchantProfile.update({
                     where: { id: transaction.merchantProfileId },
                     data: { balance: { increment: transaction.amount } }
+                });
+            }
+
+            // 3. Notify Merchant
+            const merchant = await tx.merchantProfile.findUnique({
+                where: { id: transaction.merchantProfileId! },
+                include: { user: true }
+            });
+
+            if (merchant) {
+                await NotificationService.send({
+                    userId: merchant.userId,
+                    title: status === 'COMPLETED' ? 'Payout Successful' : 'Payout Failed',
+                    message: status === 'COMPLETED'
+                        ? `Your payout of ${transaction.amount} GHS has been successfully processed.`
+                        : `Your payout of ${transaction.amount} GHS failed and has been refunded to your balance. Note: ${note || 'None'}`,
+                    category: 'TRANSACTION',
+                    channels: ['IN_APP', 'WHATSAPP']
                 });
             }
 

@@ -2,6 +2,7 @@ import { prisma } from '../../infra/prisma.client.js';
 import { PaystackProvider } from './providers/paystack.provider.js';
 import { ApiException } from '../../shared/exceptions/api.exception.js';
 import { WalletService } from '../wallet/wallet.service.js';
+import { NotificationService } from '../notifications/notification.service.js';
 
 export class PaymentService {
     /**
@@ -204,6 +205,29 @@ export class PaymentService {
             }
 
             console.info(`✅ Successfully fulfilled ${transaction.type} for reference: ${reference}`);
+
+            // 5. Notify User
+            if (transaction.type === 'DEPOSIT') {
+                await NotificationService.send({
+                    userId: transaction.walletId, // Wallet ID is used as fallback, but service needs userId
+                    title: 'Deposit Successful',
+                    message: `Your deposit of ${transaction.amount} GHS was successful.`,
+                    category: 'TRANSACTION',
+                    channels: ['IN_APP', 'SMS']
+                });
+            } else if (transaction.type === 'GOAL_FUNDING' && transaction.goalId) {
+                const goal = await tx.goal.findUnique({ where: { id: transaction.goalId } });
+                if (goal) {
+                    await NotificationService.send({
+                        userId: goal.userId,
+                        title: 'Goal Funded via Deposit',
+                        message: `Your goal "${goal.name}" has been credited with ${transaction.amount} GHS.`,
+                        category: 'GOAL_UPDATE',
+                        channels: ['IN_APP']
+                    });
+                }
+            }
+
             return updatedTransaction;
         });
     }

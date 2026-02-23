@@ -9,6 +9,7 @@ const swaggerDefinition: swaggerJsdoc.OAS3Definition = {
     },
     servers: [
         {
+
             url: 'https://savegoal-backend-2.onrender.com',
             description: 'Production (Render)',
         },
@@ -601,6 +602,214 @@ const swaggerDefinition: swaggerJsdoc.OAS3Definition = {
                 responses: {
                     '200': { description: 'Event received' },
                     '401': { description: 'Invalid signature' },
+                },
+            },
+        },
+
+        // ==================== KYC ====================
+        '/api/kyc/submit': {
+            post: {
+                tags: ['KYC'],
+                summary: 'Submit KYC and Bank details',
+                security: [{ BearerAuth: [] }],
+                requestBody: {
+                    required: true,
+                    content: {
+                        'application/json': {
+                            schema: {
+                                type: 'object',
+                                required: ['idType', 'idNumber'],
+                                properties: {
+                                    idType: { type: 'string', example: 'GHANA_CARD' },
+                                    idNumber: { type: 'string', example: 'GHA-123456789-0' },
+                                    idImageUrl: { type: 'string', example: 'https://example.com/id.jpg' },
+                                    bankName: { type: 'string', example: 'GCB Bank' },
+                                    bankAccountNo: { type: 'string', example: '1234567890123' },
+                                    bankAccountName: { type: 'string', example: 'John Doe' },
+                                },
+                            },
+                        },
+                    },
+                },
+                responses: {
+                    '200': { description: 'KYC submitted successfully' },
+                    '401': { description: 'Unauthorized' },
+                },
+            },
+        },
+        '/api/kyc/status': {
+            get: {
+                tags: ['KYC'],
+                summary: 'Get current user KYC status',
+                security: [{ BearerAuth: [] }],
+                responses: {
+                    '200': { description: 'Current KYC status and bank details' },
+                    '401': { description: 'Unauthorized' },
+                },
+            },
+        },
+
+        // ==================== MERCHANTS ====================
+        '/api/merchants/onboard': {
+            post: {
+                tags: ['Merchants'],
+                summary: 'Onboard as a merchant',
+                security: [{ BearerAuth: [] }],
+                requestBody: {
+                    required: true,
+                    content: {
+                        'application/json': {
+                            schema: {
+                                type: 'object',
+                                required: ['businessName', 'contactEmail', 'contactPhone', 'businessAddress'],
+                                properties: {
+                                    businessName: { type: 'string', example: 'Tech Store' },
+                                    contactEmail: { type: 'string', example: 'biz@techstore.com' },
+                                    contactPhone: { type: 'string', example: '+233200000000' },
+                                    businessAddress: { type: 'string', example: 'Accra Mall' },
+                                    registrationNo: { type: 'string', example: 'BN12345' },
+                                },
+                            },
+                        },
+                    },
+                },
+                responses: {
+                    '200': { description: 'Merchant profile created' },
+                },
+            },
+        },
+
+        // ==================== PRODUCTS ====================
+        '/api/products': {
+            get: {
+                tags: ['Products'],
+                summary: 'List all products in SNBL program',
+                responses: {
+                    '200': { description: 'List of available products' },
+                },
+            },
+            post: {
+                tags: ['Products'],
+                summary: 'Add a new product (Merchant only)',
+                security: [{ BearerAuth: [] }],
+                requestBody: {
+                    required: true,
+                    content: {
+                        'application/json': {
+                            schema: {
+                                type: 'object',
+                                required: ['name', 'description', 'price', 'category'],
+                                properties: {
+                                    name: { type: 'string', example: 'iPhone 15' },
+                                    description: { type: 'string', example: 'Latest Apple iPhone' },
+                                    price: { type: 'number', example: 12000.00 },
+                                    category: { type: 'string', example: 'Electronics' },
+                                    imageUrl: { type: 'string' },
+                                },
+                            },
+                        },
+                    },
+                },
+                responses: {
+                    '201': { description: 'Product added' },
+                },
+            },
+        },
+
+        // ==================== AUTOMATION ====================
+        '/api/automation/process-monthly': {
+            post: {
+                tags: ['Automation'],
+                summary: 'Trigger monthly savings batch (Admin only)',
+                security: [{ BearerAuth: [] }],
+                responses: {
+                    '200': { description: 'Batch process completed' },
+                    '403': { description: 'Forbidden - Admins only' },
+                },
+            },
+        },
+
+        // ==================== ADMIN ====================
+        '/api/admin/stats': {
+            get: {
+                tags: ['Admin'],
+                summary: 'Get system-wide statistics',
+                security: [{ BearerAuth: [] }],
+                responses: {
+                    '200': { description: 'Aggregated stats' },
+                },
+            },
+        },
+        '/api/admin/kyc/pending': {
+            get: {
+                tags: ['Admin'],
+                summary: 'List pending KYC applications',
+                security: [{ BearerAuth: [] }],
+                responses: {
+                    '200': { description: 'List of users awaiting verification' },
+                },
+            },
+        },
+        '/api/admin/kyc/{userId}/verify': {
+            patch: {
+                tags: ['Admin'],
+                summary: 'Approve or Decline KYC',
+                security: [{ BearerAuth: [] }],
+                parameters: [{ name: 'userId', in: 'path', required: true, schema: { type: 'string' } }],
+                requestBody: {
+                    required: true,
+                    content: {
+                        'application/json': {
+                            schema: {
+                                type: 'object',
+                                required: ['status'],
+                                properties: {
+                                    status: { type: 'string', enum: ['VERIFIED', 'FAILED'] },
+                                    note: { type: 'string', description: 'Rejection reason' },
+                                },
+                            },
+                        },
+                    },
+                },
+                responses: {
+                    '200': { description: 'KYC status updated' },
+                },
+            },
+        },
+        '/api/admin/payouts/pending': {
+            get: {
+                tags: ['Admin'],
+                summary: 'List pending merchant payouts',
+                security: [{ BearerAuth: [] }],
+                responses: {
+                    '200': { description: 'Pending payout transactions' },
+                },
+            },
+        },
+
+        // ==================== PAYOUTS ====================
+        '/api/payouts/request': {
+            post: {
+                tags: ['Payouts'],
+                summary: 'Request a merchant payout',
+                security: [{ BearerAuth: [] }],
+                requestBody: {
+                    required: true,
+                    content: {
+                        'application/json': {
+                            schema: {
+                                type: 'object',
+                                required: ['amount'],
+                                properties: {
+                                    amount: { type: 'number', example: 500.00 },
+                                },
+                            },
+                        },
+                    },
+                },
+                responses: {
+                    '201': { description: 'Payout request submitted' },
+                    '403': { description: 'Forbidden - Merchants only' },
                 },
             },
         },

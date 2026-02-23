@@ -2,6 +2,7 @@ import { prisma } from '../../infra/prisma.client.js';
 import { ApiException } from '../../shared/exceptions/api.exception.js';
 import { Decimal } from '@prisma/client/runtime/library';
 import { WalletService } from '../wallet/wallet.service.js';
+import { NotificationService } from '../notifications/notification.service.js';
 
 export class GoalsService {
     /**
@@ -158,6 +159,17 @@ export class GoalsService {
                 });
             }
 
+            // 7. Notify User
+            await NotificationService.send({
+                userId,
+                title: updatedGoal.status === 'COMPLETED' ? 'Goal Completed! 🎉' : 'Goal Funded',
+                message: updatedGoal.status === 'COMPLETED'
+                    ? `Congratulations! You've reached your target of ${updatedGoal.targetAmount} GHS for "${updatedGoal.name}".`
+                    : `You added ${amount} GHS to "${updatedGoal.name}". New balance: ${updatedGoal.currentAmount} GHS.`,
+                category: 'GOAL_UPDATE',
+                channels: ['IN_APP']
+            });
+
             return { goal: updatedGoal, transaction };
         });
     }
@@ -213,6 +225,15 @@ export class GoalsService {
                         productId: goal.productId
                     }
                 }
+            });
+
+            // 5. Notify Merchant & User
+            await NotificationService.send({
+                userId: goal.userId,
+                title: 'Goal Redeemed',
+                message: `Your goal "${goal.name}" has been redeemed for "${goal.product!.name}".`,
+                category: 'GOAL_UPDATE',
+                channels: ['IN_APP', 'WHATSAPP']
             });
 
             return { status: 'success', message: 'Goal redeemed and merchant paid', transaction };
