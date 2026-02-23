@@ -17,6 +17,8 @@ import emailAuthRoutes from '../modules/auth/email/email-auth.routes.js';
 import walletRoutes from '../modules/wallet/wallet.routes.js';
 import goalsRoutes from '../modules/goals/goals.routes.js';
 import paymentRoutes from '../modules/payments/payment.routes.js';
+import merchantsRoutes from '../modules/merchants/merchants.routes.js';
+import productRoutes from '../modules/products/products.routes.js';
 
 const app = express();
 
@@ -90,6 +92,12 @@ app.use('/api/goals', goalsRoutes);
 
 // Payment routes
 app.use('/api/payments', paymentRoutes);
+
+// Merchant routes
+app.use('/api/merchants', merchantsRoutes);
+
+// Product routes
+app.use('/api/products', productRoutes);
 
 // ==================== ERROR HANDLING ====================
 

@@ -80,4 +80,30 @@ router.post('/:id/fund', async (req: Request, res: Response) => {
     }
 });
 
+/**
+ * @swagger
+ * /goals/{id}/redeem:
+ *   post:
+ *     summary: Redeem a COMPLETED goal to pay the merchant
+ *     tags: [Goals]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *     responses:
+ *       200:
+ *         description: Goal redeemed successfully
+ */
+router.post('/:id/redeem', async (req: Request, res: Response) => {
+    try {
+        const userId = req.user!.id;
+        const result = await GoalsService.redeemGoal(userId, req.params.id);
+        return success(res, result);
+    } catch (err: any) {
+        return error(res, err.code || 'INTERNAL_ERROR', err.message, err.statusCode || 500);
+    }
+});
+
 export default router;

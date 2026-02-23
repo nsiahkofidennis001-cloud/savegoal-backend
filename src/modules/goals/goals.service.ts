@@ -7,8 +7,23 @@ export class GoalsService {
     /**
      * Create a new savings goal
      */
-    static async createGoal(userId: string, data: { name: string; targetAmount: number; deadline?: string; description?: string }) {
-        if (data.targetAmount <= 0) {
+    static async createGoal(userId: string, data: { name: string; targetAmount?: number; deadline?: string; description?: string; productId?: string }) {
+        let finalTargetAmount = data.targetAmount;
+
+        // If productId is provided, fetch product and set target amount
+        if (data.productId) {
+            const product = await prisma.product.findUnique({
+                where: { id: data.productId }
+            });
+
+            if (!product) {
+                throw new ApiException(404, 'NOT_FOUND', 'Product not found');
+            }
+
+            finalTargetAmount = Number(product.price);
+        }
+
+        if (!finalTargetAmount || finalTargetAmount <= 0) {
             throw new ApiException(400, 'VALIDATION_ERROR', 'Target amount must be positive');
         }
 
@@ -16,9 +31,10 @@ export class GoalsService {
             data: {
                 userId,
                 name: data.name,
-                targetAmount: data.targetAmount,
+                targetAmount: finalTargetAmount,
                 deadline: data.deadline ? new Date(data.deadline) : undefined,
                 description: data.description,
+                productId: data.productId,
                 status: 'ACTIVE',
             },
         });
@@ -111,6 +127,63 @@ export class GoalsService {
             }
 
             return { goal: updatedGoal, transaction };
+        });
+    }
+
+    /**
+     * Redeem a completed goal to pay a merchant
+     */
+    static async redeemGoal(userId: string, goalId: string) {
+        return prisma.$transaction(async (tx) => {
+            // 1. Get Goal & Verify
+            const goal = await tx.goal.findUnique({
+                where: { id: goalId },
+                include: { product: { include: { merchant: true } } }
+            });
+
+            if (!goal || goal.userId !== userId) {
+                throw new ApiException(404, 'NOT_FOUND', 'Goal not found');
+            }
+
+            if (goal.status !== 'COMPLETED') {
+                throw new ApiException(400, 'VALIDATION_ERROR', 'Only completed goals can be redeemed');
+            }
+
+            if (!goal.productId || !goal.product) {
+                throw new ApiException(400, 'VALIDATION_ERROR', 'This goal is not linked to a merchant product');
+            }
+
+            // 2. Archive goal
+            await tx.goal.update({
+                where: { id: goalId },
+                data: { status: 'ARCHIVED' }
+            });
+
+            // 3. Credit Merchant
+            await tx.merchantProfile.update({
+                where: { id: goal.product.merchantProfileId },
+                data: {
+                    balance: { increment: goal.currentAmount }
+                }
+            });
+
+            // 4. Create Payout Transaction
+            const transaction = await tx.transaction.create({
+                data: {
+                    walletId: (await tx.wallet.findUnique({ where: { userId } }))!.id,
+                    goalId: goal.id,
+                    type: 'MERCHANT_PAYOUT' as any,
+                    amount: goal.currentAmount,
+                    status: 'COMPLETED',
+                    reference: `PAYOUT-${goal.id}-${Date.now()}`,
+                    metadata: {
+                        merchantId: goal.product.merchantProfileId,
+                        productId: goal.productId
+                    }
+                }
+            });
+
+            return { status: 'success', message: 'Goal redeemed and merchant paid', transaction };
         });
     }
 }
