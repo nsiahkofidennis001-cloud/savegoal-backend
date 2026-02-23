@@ -28,10 +28,10 @@ router.get('/', async (req: Request, res: Response) => {
 router.post('/', async (req: Request, res: Response) => {
     try {
         const userId = req.user!.id;
-        const { name, targetAmount, deadline, description } = req.body;
+        const { name, targetAmount, deadline, description, productId, isRecurring, monthlyAmount, savingsDay } = req.body;
 
-        if (!name || !targetAmount) {
-            return error(res, 'VALIDATION_ERROR', 'Name and target amount are required', 400);
+        if (!name) {
+            return error(res, 'VALIDATION_ERROR', 'Name is required', 400);
         }
 
         const goal = await GoalsService.createGoal(userId, {
@@ -39,8 +39,26 @@ router.post('/', async (req: Request, res: Response) => {
             targetAmount,
             deadline,
             description,
+            productId,
+            isRecurring,
+            monthlyAmount,
+            savingsDay
         });
         return success(res, goal, undefined, 201);
+    } catch (err: any) {
+        return error(res, err.code || 'INTERNAL_ERROR', err.message, err.statusCode || 500);
+    }
+});
+
+/**
+ * PATCH /api/goals/:id/recurring
+ * Update recurring settings
+ */
+router.patch('/:id/recurring', async (req: Request, res: Response) => {
+    try {
+        const userId = req.user!.id;
+        const result = await GoalsService.updateRecurringSettings(userId, req.params.id, req.body);
+        return success(res, result);
     } catch (err: any) {
         return error(res, err.code || 'INTERNAL_ERROR', err.message, err.statusCode || 500);
     }

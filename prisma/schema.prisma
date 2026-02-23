@@ -157,6 +157,12 @@ model Goal {
   transactions Transaction[]
   productId     String?
   product       Product?      @relation(fields: [productId], references: [id])
+  
+  // Recurring Savings Settings
+  isRecurring      Boolean    @default(false)
+  monthlyAmount    Decimal?   @db.Decimal(12, 2)
+  savingsDay       Int?       // Day of the month (1-28)
+  lastAutoDebitDate DateTime?
 }
 
 model Product {
@@ -182,6 +188,7 @@ enum TransactionType {
   GOAL_FUNDING
   GOAL_WITHDRAWAL
   MERCHANT_PAYOUT
+  AUTOMATED_SAVINGS
 }
 
 enum TransactionStatus {

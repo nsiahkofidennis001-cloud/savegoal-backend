@@ -7,7 +7,16 @@ export class GoalsService {
     /**
      * Create a new savings goal
      */
-    static async createGoal(userId: string, data: { name: string; targetAmount?: number; deadline?: string; description?: string; productId?: string }) {
+    static async createGoal(userId: string, data: {
+        name: string;
+        targetAmount?: number;
+        deadline?: string;
+        description?: string;
+        productId?: string;
+        isRecurring?: boolean;
+        monthlyAmount?: number;
+        savingsDay?: number;
+    }) {
         let finalTargetAmount = data.targetAmount;
 
         // If productId is provided, fetch product and set target amount
@@ -36,7 +45,30 @@ export class GoalsService {
                 description: data.description,
                 productId: data.productId,
                 status: 'ACTIVE',
+                isRecurring: data.isRecurring || false,
+                monthlyAmount: data.monthlyAmount,
+                savingsDay: data.savingsDay,
             },
+        });
+    }
+
+    /**
+     * Update recurring savings settings for a goal
+     */
+    static async updateRecurringSettings(userId: string, goalId: string, data: {
+        isRecurring?: boolean;
+        monthlyAmount?: number;
+        savingsDay?: number;
+    }) {
+        const goal = await this.getGoal(userId, goalId);
+
+        return prisma.goal.update({
+            where: { id: goalId },
+            data: {
+                isRecurring: data.isRecurring,
+                monthlyAmount: data.monthlyAmount,
+                savingsDay: data.savingsDay,
+            }
         });
     }
 

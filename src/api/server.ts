@@ -19,6 +19,7 @@ import goalsRoutes from '../modules/goals/goals.routes.js';
 import paymentRoutes from '../modules/payments/payment.routes.js';
 import merchantsRoutes from '../modules/merchants/merchants.routes.js';
 import productRoutes from '../modules/products/products.routes.js';
+import automationRoutes from '../modules/automation/automation.routes.js';
 
 const app = express();
 
@@ -98,6 +99,9 @@ app.use('/api/merchants', merchantsRoutes);
 
 // Product routes
 app.use('/api/products', productRoutes);
+
+// Automation routes
+app.use('/api/automation', automationRoutes);
 
 // ==================== ERROR HANDLING ====================
 
