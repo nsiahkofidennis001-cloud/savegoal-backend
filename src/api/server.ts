@@ -177,6 +177,7 @@ async function startServer() {
         app.listen(PORT, () => {
             console.info(`🚀 SaveGoal API running on port ${PORT}`);
             console.info(`📍 Environment: ${env.NODE_ENV}`);
+            console.info(`🔗 BetterAuth URL: ${env.BETTER_AUTH_URL}`);
             console.info(`🔗 Health check: http://localhost:${PORT}/health`);
         });
     } catch (err) {

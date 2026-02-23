@@ -42,6 +42,7 @@ router.post('/signup', async (req: Request, res: Response) => {
         const session = (authResponse as any).session;
 
         if (!session) {
+            console.error('Debug: authResponse missing session. Keys present:', Object.keys(authResponse));
             return res.status(500).json({
                 success: false,
                 error: { code: 'AUTH_ERROR', message: 'Failed to create user session' },
@@ -119,6 +120,8 @@ router.post('/signin', async (req: Request, res: Response) => {
         const session = (authResponse as any).session;
 
         if (!user || !session) {
+            console.error('Debug: Email Signin resulted in NO SESSION.');
+            console.error('AuthResponse Keys:', Object.keys(authResponse));
             return res.status(500).json({
                 success: false,
                 error: { code: 'AUTH_ERROR', message: 'Failed to get user session' },
