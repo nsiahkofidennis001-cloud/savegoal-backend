@@ -79,6 +79,42 @@ export class AdminService {
     }
 
     /**
+     * List all pending KYC submissions
+     */
+    static async listPendingKyc() {
+        return prisma.profile.findMany({
+            where: { kycStatus: 'PENDING' },
+            include: {
+                user: {
+                    select: { name: true, email: true }
+                }
+            },
+            orderBy: { updatedAt: 'desc' }
+        });
+    }
+
+    /**
+     * Verify or Reject a KYC submission
+     */
+    static async verifyKyc(userId: string, status: 'VERIFIED' | 'FAILED', note?: string) {
+        const profile = await prisma.profile.findUnique({
+            where: { userId }
+        });
+
+        if (!profile) {
+            throw new ApiException(404, 'NOT_FOUND', 'User profile not found');
+        }
+
+        return prisma.profile.update({
+            where: { userId },
+            data: {
+                kycStatus: status,
+                kycNote: note
+            }
+        });
+    }
+
+    /**
      * Verify or reject a merchant
      */
     static async verifyMerchant(merchantId: string, isVerified: boolean) {

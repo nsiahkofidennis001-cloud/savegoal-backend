@@ -68,6 +68,36 @@ router.patch('/merchants/:id/verify', async (req: Request, res: Response) => {
 });
 
 /**
+ * GET /api/admin/kyc/pending
+ * List all pending KYC submissions
+ */
+router.get('/kyc/pending', async (req: Request, res: Response) => {
+    try {
+        const pending = await AdminService.listPendingKyc();
+        return success(res, pending);
+    } catch (err: any) {
+        return error(res, 'INTERNAL_ERROR', err.message);
+    }
+});
+
+/**
+ * PATCH /api/admin/kyc/:userId/verify
+ * Approve or decline KYC
+ */
+router.patch('/kyc/:userId/verify', async (req: Request, res: Response) => {
+    try {
+        const { status, note } = req.body;
+        if (!['VERIFIED', 'FAILED'].includes(status)) {
+            return error(res, 'VALIDATION_ERROR', 'Status must be VERIFIED or FAILED', 400);
+        }
+        const result = await AdminService.verifyKyc(req.params.userId, status, note);
+        return success(res, result);
+    } catch (err: any) {
+        return error(res, err.code || 'INTERNAL_ERROR', err.message, err.statusCode || 500);
+    }
+});
+
+/**
  * GET /api/admin/transactions
  * Monitor all system transactions
  */
