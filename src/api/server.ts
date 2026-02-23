@@ -27,6 +27,9 @@ import notificationRoutes from '../modules/notifications/notification.routes.js'
 
 const app = express();
 
+// Trust proxy (required for Render/Cloudflare rate limiting)
+app.set('trust proxy', 1);
+
 // ==================== MIDDLEWARE ====================
 
 // Security headers (relaxed CSP for Swagger UI)

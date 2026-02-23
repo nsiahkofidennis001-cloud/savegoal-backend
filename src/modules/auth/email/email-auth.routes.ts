@@ -79,7 +79,11 @@ router.post('/signup', async (req: Request, res: Response) => {
         // Handle better-auth errors (often throws APIError)
         const message = error.body?.message || error.message || 'Failed to sign up';
         const code = error.body?.code || 'INTERNAL_ERROR';
-        const status = error.status || 500;
+
+        // Ensure status is a number (Express crashes on string statuses like 'UNPROCESSABLE_ENTITY')
+        let status = error.status;
+        if (status === 'UNPROCESSABLE_ENTITY') status = 422;
+        if (typeof status !== 'number') status = 500;
 
         return res.status(status).json({
             success: false,
@@ -144,7 +148,10 @@ router.post('/signin', async (req: Request, res: Response) => {
         // Handle better-auth errors
         const message = error.body?.message || error.message || 'Failed to sign in';
         const code = error.body?.code || 'AUTH_ERROR';
-        const status = error.status || 401;
+
+        let status = error.status;
+        if (status === 'UNPROCESSABLE_ENTITY') status = 422;
+        if (typeof status !== 'number') status = 401;
 
         return res.status(status).json({
             success: false,
