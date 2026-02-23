@@ -115,6 +115,70 @@ export class AdminService {
     }
 
     /**
+     * List all pending merchant payout requests
+     */
+    static async listPendingPayouts() {
+        return prisma.transaction.findMany({
+            where: {
+                status: 'PENDING',
+                type: 'MERCHANT_PAYOUT'
+            },
+            include: {
+                wallet: {
+                    include: {
+                        user: { select: { name: true, email: true } }
+                    }
+                },
+                merchant: true
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+    }
+
+    /**
+     * Approve or Reject a merchant payout
+     */
+    static async processPayout(transactionId: string, status: 'COMPLETED' | 'FAILED', note?: string) {
+        const transaction = await prisma.transaction.findUnique({
+            where: { id: transactionId },
+            include: { merchant: true }
+        });
+
+        if (!transaction || transaction.type !== 'MERCHANT_PAYOUT') {
+            throw new ApiException(404, 'NOT_FOUND', 'Payout transaction not found');
+        }
+
+        if (transaction.status !== 'PENDING') {
+            throw new ApiException(400, 'BAD_REQUEST', 'Transaction is already processed');
+        }
+
+        return prisma.$transaction(async (tx) => {
+            // 1. Update Transaction
+            const updatedTx = await tx.transaction.update({
+                where: { id: transactionId },
+                data: {
+                    status,
+                    metadata: {
+                        ...(transaction.metadata as object),
+                        adminNote: note,
+                        processedAt: new Date()
+                    }
+                }
+            });
+
+            // 2. If rejected, restore the merchant balance
+            if (status === 'FAILED' && transaction.merchantProfileId) {
+                await tx.merchantProfile.update({
+                    where: { id: transaction.merchantProfileId },
+                    data: { balance: { increment: transaction.amount } }
+                });
+            }
+
+            return updatedTx;
+        });
+    }
+
+    /**
      * Verify or reject a merchant
      */
     static async verifyMerchant(merchantId: string, isVerified: boolean) {

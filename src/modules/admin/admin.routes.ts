@@ -98,6 +98,36 @@ router.patch('/kyc/:userId/verify', async (req: Request, res: Response) => {
 });
 
 /**
+ * GET /api/admin/payouts/pending
+ * List all pending merchant payout requests
+ */
+router.get('/payouts/pending', async (req: Request, res: Response) => {
+    try {
+        const pending = await AdminService.listPendingPayouts();
+        return success(res, pending);
+    } catch (err: any) {
+        return error(res, 'INTERNAL_ERROR', err.message);
+    }
+});
+
+/**
+ * PATCH /api/admin/payouts/:id/process
+ * Approve or decline a merchant payout
+ */
+router.patch('/payouts/:id/process', async (req: Request, res: Response) => {
+    try {
+        const { status, note } = req.body;
+        if (!['COMPLETED', 'FAILED'].includes(status)) {
+            return error(res, 'VALIDATION_ERROR', 'Status must be COMPLETED or FAILED', 400);
+        }
+        const result = await AdminService.processPayout(req.params.id, status, note);
+        return success(res, result);
+    } catch (err: any) {
+        return error(res, err.code || 'INTERNAL_ERROR', err.message, err.statusCode || 500);
+    }
+});
+
+/**
  * GET /api/admin/transactions
  * Monitor all system transactions
  */

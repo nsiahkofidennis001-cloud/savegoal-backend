@@ -22,6 +22,7 @@ import productRoutes from '../modules/products/products.routes.js';
 import automationRoutes from '../modules/automation/automation.routes.js';
 import adminRoutes from '../modules/admin/admin.routes.js';
 import kycRoutes from '../modules/kyc/kyc.routes.js';
+import payoutRoutes from '../modules/wallet/payout.routes.js';
 
 const app = express();
 
@@ -110,6 +111,9 @@ app.use('/api/admin', adminRoutes);
 
 // KYC routes
 app.use('/api/kyc', kycRoutes);
+
+// Payout routes
+app.use('/api/payouts', payoutRoutes);
 
 // ==================== ERROR HANDLING ====================
 
