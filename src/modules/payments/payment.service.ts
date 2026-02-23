@@ -48,10 +48,90 @@ export class PaymentService {
             },
         });
 
+    }
+
+    /**
+     * Initialize a goal funding payment
+     * Direct payment into a specific goal
+     */
+    static async initializeGoalFunding(userId: string, goalId: string, amount: number) {
+        // 1. Get user, goal and wallet
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            include: { wallet: true },
+        });
+
+        const goal = await prisma.goal.findUnique({
+            where: { id: goalId }
+        });
+
+        if (!user || !user.wallet || !goal) {
+            throw new ApiException(404, 'NOT_FOUND', 'User, wallet or goal not found');
+        }
+
+        if (goal.userId !== userId) {
+            throw new ApiException(403, 'FORBIDDEN', 'Unauthorized to fund this goal');
+        }
+
+        // 2. Generate unique reference
+        const reference = `GF-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+        // 3. Initialize Paystack
+        const paystackRes = await PaystackProvider.initializeTransaction({
+            email: user.email,
+            amount,
+            reference,
+            metadata: {
+                userId,
+                walletId: user.wallet.id,
+                goalId,
+                type: 'GOAL_FUNDING',
+            },
+        });
+
+        // 4. Create PENDING transaction in DB
+        await prisma.transaction.create({
+            data: {
+                walletId: user.wallet.id,
+                goalId,
+                amount,
+                type: 'GOAL_FUNDING',
+                status: 'PENDING',
+                reference,
+                metadata: {
+                    paystack_access_code: paystackRes.data.access_code,
+                },
+            },
+        });
+
         return {
             authorization_url: paystackRes.data.authorization_url,
             reference,
         };
+    }
+
+    /**
+     * Verify a payment manually (Polling)
+     */
+    static async verifyPayment(reference: string) {
+        const transaction = await prisma.transaction.findFirst({
+            where: { reference }
+        });
+
+        if (!transaction) {
+            throw new ApiException(404, 'NOT_FOUND', 'Transaction not found');
+        }
+
+        if (transaction.status !== 'PENDING') {
+            return transaction;
+        }
+
+        // Trigger fulfillment logic (it handles the actual Paystack verification)
+        await this.fulfillPayment(reference);
+
+        return prisma.transaction.findUnique({
+            where: { id: transaction.id }
+        });
     }
 
     /**
@@ -81,7 +161,7 @@ export class PaymentService {
             }
 
             // 3. Update Transaction to COMPLETED
-            await tx.transaction.update({
+            const updatedTransaction = await tx.transaction.update({
                 where: { id: transaction.id },
                 data: {
                     status: 'COMPLETED',
@@ -92,17 +172,39 @@ export class PaymentService {
                 },
             });
 
-            // 4. Credit the Wallet
-            await tx.wallet.update({
-                where: { id: transaction.walletId },
-                data: {
-                    balance: {
-                        increment: transaction.amount,
+            // 4. Handle based on type
+            if (transaction.type === 'DEPOSIT') {
+                // Credit the Wallet
+                await tx.wallet.update({
+                    where: { id: transaction.walletId },
+                    data: {
+                        balance: {
+                            increment: transaction.amount,
+                        },
                     },
-                },
-            });
+                });
+            } else if (transaction.type === 'GOAL_FUNDING' && transaction.goalId) {
+                // Credit the Goal directly
+                const updatedGoal = await tx.goal.update({
+                    where: { id: transaction.goalId },
+                    data: {
+                        currentAmount: {
+                            increment: transaction.amount,
+                        },
+                    },
+                });
 
-            console.info(`✅ Successfully fulfilled deposit for reference: ${reference}`);
+                // Check if goal reached
+                if (updatedGoal.currentAmount.greaterThanOrEqualTo(updatedGoal.targetAmount)) {
+                    await tx.goal.update({
+                        where: { id: transaction.goalId },
+                        data: { status: 'COMPLETED' },
+                    });
+                }
+            }
+
+            console.info(`✅ Successfully fulfilled ${transaction.type} for reference: ${reference}`);
+            return updatedTransaction;
         });
     }
 }
