@@ -42,6 +42,7 @@ router.post('/signup', async (req: Request, res: Response) => {
         const session = (authResponse as any).session;
 
         if (!session) {
+            console.error('Debug: authResponse missing session. Keys present:', Object.keys(authResponse));
             return res.status(500).json({
                 success: false,
                 error: { code: 'AUTH_ERROR', message: 'Failed to create user session' },
@@ -79,7 +80,11 @@ router.post('/signup', async (req: Request, res: Response) => {
         // Handle better-auth errors (often throws APIError)
         const message = error.body?.message || error.message || 'Failed to sign up';
         const code = error.body?.code || 'INTERNAL_ERROR';
-        const status = error.status || 500;
+
+        // Ensure status is a number (Express crashes on string statuses like 'UNPROCESSABLE_ENTITY')
+        let status = error.status;
+        if (status === 'UNPROCESSABLE_ENTITY') status = 422;
+        if (typeof status !== 'number') status = 500;
 
         return res.status(status).json({
             success: false,
@@ -115,6 +120,8 @@ router.post('/signin', async (req: Request, res: Response) => {
         const session = (authResponse as any).session;
 
         if (!user || !session) {
+            console.error('Debug: Email Signin resulted in NO SESSION.');
+            console.error('AuthResponse Keys:', Object.keys(authResponse));
             return res.status(500).json({
                 success: false,
                 error: { code: 'AUTH_ERROR', message: 'Failed to get user session' },
@@ -144,7 +151,10 @@ router.post('/signin', async (req: Request, res: Response) => {
         // Handle better-auth errors
         const message = error.body?.message || error.message || 'Failed to sign in';
         const code = error.body?.code || 'AUTH_ERROR';
-        const status = error.status || 401;
+
+        let status = error.status;
+        if (status === 'UNPROCESSABLE_ENTITY') status = 422;
+        if (typeof status !== 'number') status = 401;
 
         return res.status(status).json({
             success: false,

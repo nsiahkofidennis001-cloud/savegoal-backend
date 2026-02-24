@@ -30,15 +30,33 @@ router.get('/', async (req: Request, res: Response) => {
 router.post('/', validate(createGoalSchema), async (req: Request, res: Response) => {
     try {
         const userId = req.user!.id;
-        const { name, targetAmount, deadline, description } = req.body;
+        const { name, targetAmount, deadline, description, productId, isRecurring, monthlyAmount, savingsDay } = req.body;
 
         const goal = await GoalsService.createGoal(userId, {
             name,
             targetAmount,
             deadline,
             description,
+            productId,
+            isRecurring,
+            monthlyAmount,
+            savingsDay
         });
         return success(res, goal, undefined, 201);
+    } catch (err: any) {
+        return error(res, err.code || 'INTERNAL_ERROR', err.message, err.statusCode || 500);
+    }
+});
+
+/**
+ * PATCH /api/goals/:id/recurring
+ * Update recurring settings
+ */
+router.patch('/:id/recurring', async (req: Request, res: Response) => {
+    try {
+        const userId = req.user!.id;
+        const result = await GoalsService.updateRecurringSettings(userId, req.params.id, req.body);
+        return success(res, result);
     } catch (err: any) {
         return error(res, err.code || 'INTERNAL_ERROR', err.message, err.statusCode || 500);
     }
@@ -68,6 +86,32 @@ router.post('/:id/fund', validate(fundGoalSchema), async (req: Request, res: Res
         const { amount } = req.body;
 
         const result = await GoalsService.fundGoal(userId, req.params.id, amount);
+        return success(res, result);
+    } catch (err: any) {
+        return error(res, err.code || 'INTERNAL_ERROR', err.message, err.statusCode || 500);
+    }
+});
+
+/**
+ * @swagger
+ * /goals/{id}/redeem:
+ *   post:
+ *     summary: Redeem a COMPLETED goal to pay the merchant
+ *     tags: [Goals]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *     responses:
+ *       200:
+ *         description: Goal redeemed successfully
+ */
+router.post('/:id/redeem', async (req: Request, res: Response) => {
+    try {
+        const userId = req.user!.id;
+        const result = await GoalsService.redeemGoal(userId, req.params.id);
         return success(res, result);
     } catch (err: any) {
         return error(res, err.code || 'INTERNAL_ERROR', err.message, err.statusCode || 500);

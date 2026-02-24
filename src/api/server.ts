@@ -17,8 +17,18 @@ import emailAuthRoutes from '../modules/auth/email/email-auth.routes.js';
 import walletRoutes from '../modules/wallet/wallet.routes.js';
 import goalsRoutes from '../modules/goals/goals.routes.js';
 import paymentRoutes from '../modules/payments/payment.routes.js';
+import merchantsRoutes from '../modules/merchants/merchants.routes.js';
+import productRoutes from '../modules/products/products.routes.js';
+import automationRoutes from '../modules/automation/automation.routes.js';
+import adminRoutes from '../modules/admin/admin.routes.js';
+import kycRoutes from '../modules/kyc/kyc.routes.js';
+import payoutRoutes from '../modules/wallet/payout.routes.js';
+import notificationRoutes from '../modules/notifications/notification.routes.js';
 
 const app = express();
+
+// Trust proxy (required for Render/Cloudflare rate limiting)
+app.set('trust proxy', 1);
 
 // ==================== MIDDLEWARE ====================
 
@@ -91,6 +101,27 @@ app.use('/api/goals', goalsRoutes);
 // Payment routes
 app.use('/api/payments', paymentRoutes);
 
+// Merchant routes
+app.use('/api/merchants', merchantsRoutes);
+
+// Product routes
+app.use('/api/products', productRoutes);
+
+// Automation routes
+app.use('/api/automation', automationRoutes);
+
+// Admin routes
+app.use('/api/admin', adminRoutes);
+
+// KYC routes
+app.use('/api/kyc', kycRoutes);
+
+// Payout routes
+app.use('/api/payouts', payoutRoutes);
+
+// Notification routes
+app.use('/api/notifications', notificationRoutes);
+
 // ==================== ERROR HANDLING ====================
 
 // 404 handler
@@ -146,6 +177,7 @@ async function startServer() {
         app.listen(PORT, () => {
             console.info(`🚀 SaveGoal API running on port ${PORT}`);
             console.info(`📍 Environment: ${env.NODE_ENV}`);
+            console.info(`🔗 BetterAuth URL: ${env.BETTER_AUTH_URL}`);
             console.info(`🔗 Health check: http://localhost:${PORT}/health`);
         });
     } catch (err) {

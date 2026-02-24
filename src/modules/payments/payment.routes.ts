@@ -31,6 +31,50 @@ router.post('/deposit', requireAuth, async (req: Request, res: Response) => {
 });
 
 /**
+ * POST /api/payments/goal-funding
+ * Initialize direct funding for a goal
+ */
+router.post('/goal-funding', requireAuth, async (req: Request, res: Response) => {
+    try {
+        const userId = req.user!.id;
+        const { goalId, amount } = req.body;
+
+        if (!goalId) {
+            return error(res, 'VALIDATION_ERROR', 'Goal ID is required', 400);
+        }
+
+        if (!amount || typeof amount !== 'number' || amount <= 0) {
+            return error(res, 'VALIDATION_ERROR', 'Valid positive amount is required', 400);
+        }
+
+        const result = await PaymentService.initializeGoalFunding(userId, goalId, amount);
+        return success(res, result);
+    } catch (err: any) {
+        console.error('Initialize goal funding error:', err);
+        const code = err.code || 'INTERNAL_ERROR';
+        const statusCode = err.statusCode || 500;
+        return error(res, code, err.message, statusCode);
+    }
+});
+
+/**
+ * GET /api/payments/verify/:reference
+ * Manually verify a payment status
+ */
+router.get('/verify/:reference', requireAuth, async (req: Request, res: Response) => {
+    try {
+        const { reference } = req.params;
+        const result = await PaymentService.verifyPayment(reference);
+        return success(res, result);
+    } catch (err: any) {
+        console.error('Verify payment error:', err);
+        const code = err.code || 'INTERNAL_ERROR';
+        const statusCode = err.statusCode || 500;
+        return error(res, code, err.message, statusCode);
+    }
+});
+
+/**
  * POST /api/payments/webhook
  * Paystack Webhook Handler
  */
