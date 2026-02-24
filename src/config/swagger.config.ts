@@ -306,7 +306,7 @@ const swaggerDefinition: swaggerJsdoc.OAS3Definition = {
             post: {
                 tags: ['Auth - Phone OTP'],
                 summary: 'Verify OTP and login/register',
-                description: 'Verifies the OTP. If user does not exist, creates one. Returns session token.',
+                description: 'Verifies the OTP. For testing, use the magic code **`123456`** if a real SMS is not delivered.',
                 requestBody: {
                     required: true,
                     content: {
