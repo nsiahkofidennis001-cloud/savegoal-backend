@@ -175,7 +175,8 @@ const swaggerDefinition: swaggerJsdoc.OAS3Definition = {
                             },
                         },
                     },
-                    '400': { description: 'Validation error or email already exists' },
+                    '400': { description: 'Validation error' },
+                    '422': { description: 'User already exists' },
                 },
             },
         },
@@ -678,6 +679,43 @@ const swaggerDefinition: swaggerJsdoc.OAS3Definition = {
                 },
             },
         },
+        '/api/merchants/profile': {
+            get: {
+                tags: ['Merchants'],
+                summary: 'Get merchant profile',
+                security: [{ BearerAuth: [] }],
+                responses: {
+                    '200': { description: 'Merchant profile data' },
+                    '401': { description: 'Unauthorized' },
+                    '404': { description: 'Merchant not found' },
+                },
+            },
+            patch: {
+                tags: ['Merchants'],
+                summary: 'Update merchant profile',
+                security: [{ BearerAuth: [] }],
+                requestBody: {
+                    required: true,
+                    content: {
+                        'application/json': {
+                            schema: {
+                                type: 'object',
+                                properties: {
+                                    businessName: { type: 'string' },
+                                    businessAddress: { type: 'string' },
+                                    contactEmail: { type: 'string' },
+                                    contactPhone: { type: 'string' },
+                                },
+                            },
+                        },
+                    },
+                },
+                responses: {
+                    '200': { description: 'Profile updated' },
+                    '401': { description: 'Unauthorized' },
+                },
+            },
+        },
 
         // ==================== PRODUCTS ====================
         '/api/products': {
@@ -813,12 +851,52 @@ const swaggerDefinition: swaggerJsdoc.OAS3Definition = {
                 },
             },
         },
+
+        // ==================== NOTIFICATIONS ====================
+        '/api/notifications': {
+            get: {
+                tags: ['Notifications'],
+                summary: 'List user notifications',
+                security: [{ BearerAuth: [] }],
+                parameters: [
+                    { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
+                    { name: 'limit', in: 'query', schema: { type: 'integer', default: 20 } },
+                ],
+                responses: {
+                    '200': { description: 'List of notifications and unread count' },
+                    '401': { description: 'Unauthorized' },
+                },
+            },
+        },
+        '/api/notifications/{id}/read': {
+            patch: {
+                tags: ['Notifications'],
+                summary: 'Mark notification as read',
+                security: [{ BearerAuth: [] }],
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+                responses: {
+                    '200': { description: 'Marked as read' },
+                    '401': { description: 'Unauthorized' },
+                },
+            },
+        },
+        '/api/notifications/read-all': {
+            post: {
+                tags: ['Notifications'],
+                summary: 'Mark all notifications as read',
+                security: [{ BearerAuth: [] }],
+                responses: {
+                    '200': { description: 'All marked as read' },
+                    '401': { description: 'Unauthorized' },
+                },
+            },
+        },
     },
 };
 
 const options: swaggerJsdoc.Options = {
     swaggerDefinition,
-    apis: [], // We define paths inline above, no need to scan files
+    apis: ['./src/modules/**/*.routes.ts', './src/api/routes/**/*.routes.ts'], // Scan for JSDoc comments
 };
 
 export const swaggerSpec = swaggerJsdoc(options);

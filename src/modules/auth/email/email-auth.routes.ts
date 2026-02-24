@@ -37,10 +37,13 @@ router.post('/signup', async (req: Request, res: Response) => {
         }
 
         const user = authResponse.user;
-        const session = (authResponse as any).session;
+        const sessionData = (authResponse as any).session || {
+            token: (authResponse as any).token,
+            expiresAt: new Date(Date.now() + CONSTANTS.SESSION_EXPIRY_SECONDS * 1000)
+        };
 
-        if (!session) {
-            console.error('Debug: authResponse missing session. Keys present:', Object.keys(authResponse));
+        if (!sessionData.token) {
+            console.error('Debug: authResponse missing session and token. Keys present:', Object.keys(authResponse));
             return res.status(500).json({
                 success: false,
                 error: { code: 'AUTH_ERROR', message: 'Failed to create user session' },
@@ -67,8 +70,8 @@ router.post('/signup', async (req: Request, res: Response) => {
                     role: (user as any).role,
                 },
                 session: {
-                    token: session.token,
-                    expiresAt: session.expiresAt,
+                    token: sessionData.token,
+                    expiresAt: sessionData.expiresAt,
                 },
             },
         });
@@ -115,10 +118,13 @@ router.post('/signin', async (req: Request, res: Response) => {
         });
 
         const user = authResponse.user;
-        const session = (authResponse as any).session;
+        const sessionData = (authResponse as any).session || {
+            token: (authResponse as any).token,
+            expiresAt: new Date(Date.now() + CONSTANTS.SESSION_EXPIRY_SECONDS * 1000)
+        };
 
-        if (!user || !session) {
-            console.error('Debug: Email Signin resulted in NO SESSION.');
+        if (!user || !sessionData.token) {
+            console.error('Debug: Email Signin resulted in NO SESSION or TOKEN.');
             console.error('AuthResponse Keys:', Object.keys(authResponse));
             return res.status(500).json({
                 success: false,
@@ -138,8 +144,8 @@ router.post('/signin', async (req: Request, res: Response) => {
                     role: (user as any).role,
                 },
                 session: {
-                    token: session.token,
-                    expiresAt: session.expiresAt,
+                    token: sessionData.token,
+                    expiresAt: sessionData.expiresAt,
                 },
             },
         });
