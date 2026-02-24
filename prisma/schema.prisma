@@ -213,6 +213,7 @@ enum NotificationCategory {
   SYSTEM
   TRANSACTION
   GOAL
+  GOAL_UPDATE
   AUTH
 }
 
