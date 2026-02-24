@@ -74,6 +74,7 @@ router.post('/send-otp', async (req: Request, res: Response) => {
 
         // Send SMS via Twilio (if configured)
         if (twilioClient && env.TWILIO_PHONE_NUMBER) {
+            console.info(`[SMS] Sending OTP ${otp} to ${phone} via Twilio`);
             await twilioClient.messages.create({
                 body: `Your SaveGoal verification code is: ${otp}. Valid for 5 minutes.`,
                 from: env.TWILIO_PHONE_NUMBER,
