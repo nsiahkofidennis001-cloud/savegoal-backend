@@ -2,6 +2,8 @@ import { Router, Request, Response } from 'express';
 import { GoalsService } from './goals.service.js';
 import { success, error } from '../../shared/utils/response.util.js';
 import { requireAuth } from '../auth/auth.middleware.js';
+import { validate } from '../../api/middlewares/validate.middleware.js';
+import { createGoalSchema, fundGoalSchema } from './goals.schema.js';
 
 const router = Router();
 
@@ -25,14 +27,10 @@ router.get('/', async (req: Request, res: Response) => {
  * POST /api/goals
  * Create new goal
  */
-router.post('/', async (req: Request, res: Response) => {
+router.post('/', validate(createGoalSchema), async (req: Request, res: Response) => {
     try {
         const userId = req.user!.id;
         const { name, targetAmount, deadline, description } = req.body;
-
-        if (!name || !targetAmount) {
-            return error(res, 'VALIDATION_ERROR', 'Name and target amount are required', 400);
-        }
 
         const goal = await GoalsService.createGoal(userId, {
             name,
@@ -64,14 +62,10 @@ router.get('/:id', async (req: Request, res: Response) => {
  * POST /api/goals/:id/fund
  * Fund a goal
  */
-router.post('/:id/fund', async (req: Request, res: Response) => {
+router.post('/:id/fund', validate(fundGoalSchema), async (req: Request, res: Response) => {
     try {
         const userId = req.user!.id;
         const { amount } = req.body;
-
-        if (!amount || typeof amount !== 'number') {
-            return error(res, 'VALIDATION_ERROR', 'Valid amount is required', 400);
-        }
 
         const result = await GoalsService.fundGoal(userId, req.params.id, amount);
         return success(res, result);

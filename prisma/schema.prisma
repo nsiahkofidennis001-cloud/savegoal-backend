@@ -22,13 +22,20 @@ model User {
   updatedAt      DateTime  @updatedAt
   phone          String?   @unique
   role           UserRole  @default(CONSUMER)
+  twoFactorEnabled Boolean   @default(false)
 
   sessions       Session[]
   accounts       Account[]
-  profile        Profile?
+  consumerProfile ConsumerProfile?
   merchantProfile MerchantProfile?
   wallet         Wallet?
   goals          Goal[]
+  cart           Cart?      @relation("CustomerCart")
+  orders         Order[]    @relation("CustomerOrders")
+  reviews        Review[]   @relation("CustomerReviews")
+  auditLogs      AuditLog[]
+  tickets        SupportTicket[] @relation("UserTickets")
+  twofactors     TwoFactor[]
 }
 
 model Session {
@@ -69,6 +76,14 @@ model Verification {
   updatedAt  DateTime @updatedAt
 }
 
+model TwoFactor {
+  id          String   @id @default(uuid())
+  secret      String
+  backupCodes String
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
 // ==================== CUSTOM SAVEGOAL TABLES ====================
 
 enum UserRole {
@@ -84,7 +99,7 @@ enum KYCStatus {
   EXPIRED
 }
 
-model Profile {
+model ConsumerProfile {
   id          String    @id @default(uuid())
   userId      String    @unique
   firstName   String
@@ -115,6 +130,7 @@ model MerchantProfile {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  store           Store?
 }
 
 // ==================== CORE SAVINGS MODELS ====================
@@ -153,6 +169,7 @@ model Goal {
   updatedAt     DateTime   @updatedAt
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions Transaction[]
+  order        Order?
 }
 
 enum TransactionType {
@@ -183,4 +200,206 @@ model Transaction {
   updatedAt       DateTime          @updatedAt
   wallet Wallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
   goal   Goal?  @relation(fields: [goalId], references: [id])
+}
+
+// ==================== MERCHANT DOMAIN ====================
+
+model Store {
+  id          String   @id @default(uuid())
+  merchantId  String   @unique
+  merchant    MerchantProfile @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  logoUrl     String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  categories  Category[]
+  products    Product[]
+  orders      Order[]
+}
+
+model Category {
+  id          String   @id @default(uuid())
+  storeId     String
+  store       Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  merchantId  String   // Tenant Key requirement
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  products    Product[]
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  storeId     String
+  store       Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  categoryId  String?
+  category    Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  merchantId  String   // Tenant Key requirement
+  name        String
+  description String?
+  basePrice   Decimal  @db.Decimal(12, 2)
+  imageUrl    String?
+  isArchived  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  variants    ProductVariant[]
+  reviews     Review[]
+  orderItems  OrderItem[]
+  cartItems   CartItem[]
+}
+
+model ProductVariant {
+  id          String   @id @default(uuid())
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  merchantId  String   // Tenant Key requirement
+  name        String   // e.g., "Large, Red"
+  sku         String?  @unique
+  price       Decimal  @db.Decimal(12, 2)
+  stock       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  inventoryLogs InventoryLog[]
+  orderItems    OrderItem[]
+  cartItems     CartItem[]
+}
+
+enum InventoryAction {
+  ADD
+  REMOVE
+  SET
+}
+
+model InventoryLog {
+  id          String   @id @default(uuid())
+  variantId   String
+  variant     ProductVariant  @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  merchantId  String   // Tenant Key requirement
+  action      InventoryAction
+  quantity    Int
+  reason      String?
+  createdAt   DateTime @default(now())
+}
+
+// ==================== CONSUMER DOMAIN ====================
+
+model Cart {
+  id          String   @id @default(uuid())
+  customerId  String   @unique
+  customer    User     @relation("CustomerCart", fields: [customerId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  items       CartItem[]
+}
+
+model CartItem {
+  id          String   @id @default(uuid())
+  cartId      String
+  cart        Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variantId   String?
+  variant     ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  merchantId  String   // Tenant Key requirement
+  quantity    Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+model Order {
+  id          String   @id @default(uuid())
+  customerId  String
+  customer    User     @relation("CustomerOrders", fields: [customerId], references: [id], onDelete: Cascade)
+  storeId     String
+  store       Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  merchantId  String   // Tenant Key requirement
+  totalAmount Decimal  @db.Decimal(12, 2)
+  status      OrderStatus @default(PENDING)
+  goalId      String?  @unique
+  goal        Goal?    @relation(fields: [goalId], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  items       OrderItem[]
+}
+
+model OrderItem {
+  id          String   @id @default(uuid())
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variantId   String?
+  variant     ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  quantity    Int
+  priceAtTime Decimal  @db.Decimal(12, 2)
+  merchantId  String   // Tenant Key requirement
+  createdAt   DateTime @default(now())
+}
+
+model Review {
+  id          String   @id @default(uuid())
+  customerId  String
+  customer    User     @relation("CustomerReviews", fields: [customerId], references: [id], onDelete: Cascade)
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  merchantId  String   // Tenant Key requirement
+  rating      Int      // 1-5
+  comment     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ==================== ADMIN DOMAIN ====================
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action      String
+  entity      String
+  entityId    String?
+  details     Json?
+  createdAt   DateTime @default(now())
+}
+
+model SystemConfig {
+  key         String   @id
+  value       Json
+  description String?
+  updatedAt   DateTime @updatedAt
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+model SupportTicket {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation("UserTickets", fields: [userId], references: [id], onDelete: Cascade)
+  subject     String
+  description String
+  status      TicketStatus @default(OPEN)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
