@@ -75,7 +75,7 @@ router.post('/send-otp', async (req: Request, res: Response) => {
 
         // Send SMS via Twilio (if configured)
         if (twilioClient && env.TWILIO_PHONE_NUMBER) {
-            console.info(`[SMS] Sending OTP ${otp} to ${phone} via Twilio`);
+            console.warn(`[SMS] Sending OTP ${otp} to ${phone} via Twilio`);
             await twilioClient.messages.create({
                 body: `Your SaveGoal verification code is: ${otp}. Valid for 5 minutes.`,
                 from: env.TWILIO_PHONE_NUMBER,
@@ -87,7 +87,7 @@ router.post('/send-otp', async (req: Request, res: Response) => {
             });
         } else {
             // Development mode - return OTP in response for easy testing
-            console.info(`[DEV] OTP for ${phone}: ${otp}`);
+            console.warn(`[DEV] OTP for ${phone}: ${otp}`);
             return res.json({
                 success: true,
                 data: {
