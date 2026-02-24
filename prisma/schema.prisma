@@ -102,6 +102,7 @@ model Profile {
   idType      String?   // GHANA_CARD, PASSPORT, etc.
   idNumber    String?
   idImageUrl  String?
+  selfieImageUrl String?
 
   // Bank Details for Consumers
   bankName        String?

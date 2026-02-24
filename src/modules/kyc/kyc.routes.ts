@@ -26,7 +26,7 @@ router.get('/status', async (req: Request, res: Response) => {
  */
 router.post('/submit', async (req: Request, res: Response) => {
     try {
-        const { idType, idNumber, idImageUrl, bankName, bankAccountNo, bankAccountName } = req.body;
+        const { idType, idNumber, idImageUrl, selfieImageUrl, bankName, bankAccountNo, bankAccountName } = req.body;
 
         if (!idType || !idNumber) {
             return error(res, 'VALIDATION_ERROR', 'ID Type and ID Number are required', 400);
@@ -36,6 +36,7 @@ router.post('/submit', async (req: Request, res: Response) => {
             idType,
             idNumber,
             idImageUrl,
+            selfieImageUrl,
             bankName,
             bankAccountNo,
             bankAccountName

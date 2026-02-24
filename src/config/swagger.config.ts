@@ -624,6 +624,7 @@ const swaggerDefinition: swaggerJsdoc.OAS3Definition = {
                                     idType: { type: 'string', example: 'GHANA_CARD' },
                                     idNumber: { type: 'string', example: 'GHA-123456789-0' },
                                     idImageUrl: { type: 'string', example: 'https://example.com/id.jpg' },
+                                    selfieImageUrl: { type: 'string', example: 'https://example.com/selfie.jpg' },
                                     bankName: { type: 'string', example: 'GCB Bank' },
                                     bankAccountNo: { type: 'string', example: '1234567890123' },
                                     bankAccountName: { type: 'string', example: 'John Doe' },

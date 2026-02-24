@@ -10,6 +10,7 @@ export class KycService {
         idType: string;
         idNumber: string;
         idImageUrl?: string;
+        selfieImageUrl?: string;
         bankName?: string;
         bankAccountNo?: string;
         bankAccountName?: string;
@@ -33,6 +34,7 @@ export class KycService {
                 idType: data.idType,
                 idNumber: data.idNumber,
                 idImageUrl: data.idImageUrl,
+                selfieImageUrl: data.selfieImageUrl,
                 bankName: data.bankName,
                 bankAccountNo: data.bankAccountNo,
                 bankAccountName: data.bankAccountName,
@@ -54,6 +56,7 @@ export class KycService {
                 idType: true,
                 idNumber: true,
                 idImageUrl: true,
+                selfieImageUrl: true,
                 bankName: true,
                 bankAccountNo: true,
                 bankAccountName: true,
