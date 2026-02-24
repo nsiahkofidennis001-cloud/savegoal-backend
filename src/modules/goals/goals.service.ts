@@ -118,9 +118,16 @@ export class GoalsService {
             }
 
             // 2. Get Wallet & Verify Balance
-            const wallet = await tx.wallet.findUnique({ where: { userId } });
+            let wallet = await tx.wallet.findUnique({ where: { userId } });
             if (!wallet) {
-                throw new ApiException(404, 'NOT_FOUND', 'Wallet not found');
+                // Auto-create if not exists
+                wallet = await tx.wallet.create({
+                    data: {
+                        userId,
+                        currency: 'GHS',
+                        balance: 0.0,
+                    },
+                });
             }
 
             if (wallet.balance.lessThan(amount)) {

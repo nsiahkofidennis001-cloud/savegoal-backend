@@ -50,11 +50,17 @@ export class WalletService {
         }
 
         return prisma.$transaction(async (tx) => {
-            const wallet = await tx.wallet.findUnique({ where: { userId } });
+            let wallet = await tx.wallet.findUnique({ where: { userId } });
 
             if (!wallet) {
-                // Should exist by this point
-                throw new ApiException(404, 'NOT_FOUND', 'Wallet not found');
+                // Auto-create if not exists
+                wallet = await tx.wallet.create({
+                    data: {
+                        userId,
+                        currency: 'GHS',
+                        balance: 0.0,
+                    },
+                });
             }
 
             // Create transaction record
