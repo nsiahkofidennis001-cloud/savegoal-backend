@@ -72,8 +72,8 @@ router.post('/signup', async (req: Request, res: Response) => {
                     role: (user as any).role,
                 },
                 session: {
-                    token: session.token,
-                    expiresAt: session.expiresAt,
+                    token: sessionData.token,
+                    expiresAt: sessionData.expiresAt,
                 },
             },
         });
@@ -146,8 +146,8 @@ router.post('/signin', async (req: Request, res: Response) => {
                     role: (user as any).role,
                 },
                 session: {
-                    token: session.token,
-                    expiresAt: session.expiresAt,
+                    token: sessionData.token,
+                    expiresAt: sessionData.expiresAt,
                 },
             },
         });
