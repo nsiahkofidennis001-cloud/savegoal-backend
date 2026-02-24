@@ -23,13 +23,12 @@ export class ProductsService {
 
         return prisma.product.create({
             data: {
-                merchantProfileId: merchant.id,
+                storeId: merchant.id, // Using merchant.id as storeId for now if it's the only store
+                merchantId: merchant.id,
                 name: data.name,
                 description: data.description,
-                price: data.price,
-                currency: data.currency || 'GHS',
-                image: data.image,
-                stock: data.stock
+                basePrice: data.price,
+                imageUrl: data.image
             }
         });
     }
@@ -39,12 +38,12 @@ export class ProductsService {
      */
     static async listProducts() {
         return prisma.product.findMany({
-            where: { isAvailable: true },
+            where: { isArchived: false },
             include: {
-                merchant: {
+                store: {
                     select: {
-                        businessName: true,
-                        isVerified: true
+                        name: true,
+                        merchantId: true
                     }
                 }
             }
@@ -58,10 +57,10 @@ export class ProductsService {
         const product = await prisma.product.findUnique({
             where: { id },
             include: {
-                merchant: {
+                store: {
                     select: {
-                        businessName: true,
-                        isVerified: true
+                        name: true,
+                        merchantId: true
                     }
                 }
             }
@@ -86,21 +85,31 @@ export class ProductsService {
         isAvailable: boolean;
     }>) {
         const product = await prisma.product.findUnique({
-            where: { id: productId },
-            include: { merchant: true }
+            where: { id: productId }
         });
 
         if (!product) {
             throw new ApiException(404, 'NOT_FOUND', 'Product not found');
         }
 
-        if (product.merchant.userId !== userId) {
+        const merchant = await prisma.merchantProfile.findUnique({
+            where: { userId }
+        });
+
+        if (!merchant || product.merchantId !== merchant.id) {
             throw new ApiException(403, 'FORBIDDEN', 'Unauthorized to update this product');
         }
 
+        const { price, image, isAvailable, ...otherData } = data;
+
         return prisma.product.update({
             where: { id: productId },
-            data
+            data: {
+                ...otherData,
+                basePrice: price,
+                imageUrl: image,
+                isArchived: isAvailable !== undefined ? !isAvailable : undefined
+            }
         });
     }
 
@@ -109,21 +118,24 @@ export class ProductsService {
      */
     static async deleteProduct(userId: string, productId: string) {
         const product = await prisma.product.findUnique({
-            where: { id: productId },
-            include: { merchant: true }
+            where: { id: productId }
         });
 
         if (!product) {
             throw new ApiException(404, 'NOT_FOUND', 'Product not found');
         }
 
-        if (product.merchant.userId !== userId) {
+        const merchant = await prisma.merchantProfile.findUnique({
+            where: { userId }
+        });
+
+        if (!merchant || product.merchantId !== merchant.id) {
             throw new ApiException(403, 'FORBIDDEN', 'Unauthorized to delete this product');
         }
 
         return prisma.product.update({
             where: { id: productId },
-            data: { isAvailable: false }
+            data: { isArchived: true }
         });
     }
 }

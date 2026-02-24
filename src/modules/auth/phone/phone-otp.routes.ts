@@ -4,7 +4,6 @@ import { CONSTANTS } from '../../../config/constants.js';
 import Twilio from 'twilio';
 import { env } from '../../../config/env.config.js';
 import { prisma } from '../../../infra/prisma.client.js';
-import { auth } from '../auth.js';
 
 const router = Router();
 

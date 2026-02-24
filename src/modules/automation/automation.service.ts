@@ -1,5 +1,4 @@
 import { prisma } from '../../infra/prisma.client.js';
-import { ApiException } from '../../shared/exceptions/api.exception.js';
 import { TransactionType } from '@prisma/client';
 
 export class AutomationService {
@@ -37,7 +36,7 @@ export class AutomationService {
         const results = {
             success: 0,
             failed: 0,
-            errors: [] as any[]
+            errors: [] as { goalId: string; error: string }[]
         };
 
         for (const goal of goals) {
@@ -105,10 +104,11 @@ export class AutomationService {
                 });
 
                 results.success++;
-            } catch (err: any) {
-                console.error(`❌ Failed automated saving for goal ${goal.id}:`, err.message);
+            } catch (err: unknown) {
+                const message = err instanceof Error ? err.message : 'Unknown error';
+                console.error(`❌ Failed automated saving for goal ${goal.id}:`, message);
                 results.failed++;
-                results.errors.push({ goalId: goal.id, error: err.message });
+                results.errors.push({ goalId: goal.id, error: message });
             }
         }
 

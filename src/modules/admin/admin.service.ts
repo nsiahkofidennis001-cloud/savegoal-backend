@@ -1,4 +1,5 @@
 import { prisma } from '../../infra/prisma.client.js';
+import { TransactionType } from '@prisma/client';
 import { ApiException } from '../../shared/exceptions/api.exception.js';
 
 import { NotificationService } from '../notifications/notification.service.js';
@@ -44,7 +45,7 @@ export class AdminService {
                 skip,
                 take: limit,
                 include: {
-                    profile: true,
+                    consumerProfile: true,
                     wallet: true
                 },
                 orderBy: { createdAt: 'desc' }
@@ -84,7 +85,7 @@ export class AdminService {
      * List all pending KYC submissions
      */
     static async listPendingKyc() {
-        return prisma.profile.findMany({
+        return prisma.consumerProfile.findMany({
             where: { kycStatus: 'PENDING' },
             include: {
                 user: {
@@ -99,7 +100,7 @@ export class AdminService {
      * Verify or Reject a KYC submission
      */
     static async verifyKyc(userId: string, status: 'VERIFIED' | 'FAILED', note?: string) {
-        const profile = await prisma.profile.findUnique({
+        const profile = await prisma.consumerProfile.findUnique({
             where: { userId }
         });
 
@@ -107,7 +108,7 @@ export class AdminService {
             throw new ApiException(404, 'NOT_FOUND', 'User profile not found');
         }
 
-        return prisma.profile.update({
+        return prisma.consumerProfile.update({
             where: { userId },
             data: {
                 kycStatus: status,
@@ -123,7 +124,7 @@ export class AdminService {
         return prisma.transaction.findMany({
             where: {
                 status: 'PENDING',
-                type: 'MERCHANT_PAYOUT'
+                type: TransactionType.MERCHANT_PAYOUT
             },
             include: {
                 wallet: {
@@ -146,7 +147,7 @@ export class AdminService {
             include: { merchant: true }
         });
 
-        if (!transaction || transaction.type !== 'MERCHANT_PAYOUT') {
+        if (!transaction || transaction.type !== TransactionType.MERCHANT_PAYOUT) {
             throw new ApiException(404, 'NOT_FOUND', 'Payout transaction not found');
         }
 

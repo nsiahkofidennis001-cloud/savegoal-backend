@@ -12,8 +12,8 @@ export function validate(schema: AnyZodObject) {
             });
             // Replace request data with parsed/sanitized data (strips unknown keys if schema uses .strip())
             req.body = parsed.body;
-            req.query = parsed.query as any;
-            req.params = parsed.params as any;
+            req.query = parsed.query as Request['query'];
+            req.params = parsed.params as Request['params'];
             return next();
         } catch (err) {
             if (err instanceof z.ZodError) {

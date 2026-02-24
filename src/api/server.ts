@@ -162,10 +162,6 @@ async function startServer() {
             if (env.NODE_ENV === 'production') {
                 console.error('❌ Database connection failed:', dbErr);
                 throw dbErr;
-            } else {
-                console.warn('⚠️ Database unreachable (local network cannot reach Supabase).');
-                console.warn('   Routes requiring DB will fail, but server will start for local dev.');
-                console.warn('   Use a VPN or deploy to Render to test DB-dependent routes.');
             }
         }
 

@@ -1,7 +1,6 @@
 import { prisma } from '../../infra/prisma.client.js';
 import { PaystackProvider } from './providers/paystack.provider.js';
 import { ApiException } from '../../shared/exceptions/api.exception.js';
-import { WalletService } from '../wallet/wallet.service.js';
 import { NotificationService } from '../notifications/notification.service.js';
 
 export class PaymentService {
