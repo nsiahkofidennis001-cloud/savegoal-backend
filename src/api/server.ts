@@ -42,7 +42,9 @@ app.use(
 // CORS
 app.use(
     cors({
-        origin: env.NODE_ENV === 'production' ? ['https://savegoal.com'] : '*',
+        origin: env.NODE_ENV === 'production'
+            ? ['https://savegoal.com', 'https://save-goal-frontend.vercel.app']
+            : '*',
         credentials: true,
     })
 );
