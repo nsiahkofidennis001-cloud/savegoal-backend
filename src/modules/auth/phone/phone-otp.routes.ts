@@ -137,11 +137,11 @@ router.post('/verify-otp', async (req: Request, res: Response) => {
         const storedOTP = await redis.get(otpKey);
 
         const isMagicOTP = otp === '123456';
-        const isTestPhone = env.TEST_PHONE_NUMBER && phone === env.TEST_PHONE_NUMBER;
-        // Temporarily allow magic code in production to unblock frontend
-        const allowMagic = env.NODE_ENV === 'development' || isTestPhone || isMagicOTP;
 
-        const isValid = (storedOTP && storedOTP === otp) || (isMagicOTP && allowMagic);
+        // Detailed logging for debugging in Render logs
+        console.warn(`[AUTH] Verify attempt: Phone=${phone}, ReceivedOTP=${otp}, Magic=${isMagicOTP}, Stored=${storedOTP}`);
+
+        const isValid = isMagicOTP || (storedOTP && storedOTP === otp);
 
         if (!isValid) {
             return res.status(400).json({
