@@ -54,10 +54,12 @@ router.post('/send-otp', async (req: Request, res: Response) => {
             });
         }
 
-        // Check rate limiting (max 3 OTPs per phone per hour)
+        // Check rate limiting (max 20 OTPs per phone per hour for testing)
         const rateLimitKey = `otp:ratelimit:${phone}`;
         const attempts = await redis.get(rateLimitKey);
-        if (attempts && parseInt(attempts) >= 3) {
+        const isTestPhone = env.TEST_PHONE_NUMBER && phone === env.TEST_PHONE_NUMBER;
+
+        if (!isTestPhone && attempts && parseInt(attempts) >= 20) {
             return res.status(429).json({
                 success: false,
                 error: { code: 'RATE_LIMITED', message: 'Too many OTP requests. Try again later.' },
