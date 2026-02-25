@@ -1,5 +1,6 @@
 import { Redis } from 'ioredis';
 import { env } from '../config/env.config.js';
+import { logger } from './logger.js';
 
 const globalForRedis = globalThis as unknown as {
     redis: Redis | undefined;
@@ -13,7 +14,7 @@ class MemoryRedis {
     constructor() {
         this.store = globalForRedis.memoryStore ?? new Map();
         globalForRedis.memoryStore = this.store;
-        console.info('⚠️ Using in-memory store (Redis fallback for development)');
+        logger.warn('⚠️ Using in-memory store (Redis fallback for development)');
     }
 
     async get(key: string): Promise<string | null> {
@@ -57,7 +58,7 @@ class MemoryRedis {
         return 'PONG';
     }
 
-    on(_event: string, _callback: (...args: any[]) => void): this {
+    on(_event: string, _callback: (...args: unknown[]) => void): this {
         return this;
     }
 }
@@ -76,7 +77,7 @@ function createRedisClient(): Redis {
         });
 
         realRedis.on('connect', () => {
-            console.info('✅ Redis connected');
+            logger.info('✅ Redis connected');
         });
 
         // Check if connected, otherwise use memory
@@ -92,12 +93,12 @@ function createRedisClient(): Redis {
         maxRetriesPerRequest: 3,
     });
 
-    redis.on('error', (err: any) => {
-        console.error('Redis connection error:', err);
+    redis.on('error', (err: Error) => {
+        logger.error(err, 'Redis connection error:');
     });
 
     redis.on('connect', () => {
-        console.info('✅ Redis connected');
+        logger.info('✅ Redis connected');
     });
 
     return redis;

@@ -1,7 +1,8 @@
 import { prisma } from '../../infra/prisma.client.js';
 import { PaystackProvider } from './providers/paystack.provider.js';
 import { ApiException } from '../../shared/exceptions/api.exception.js';
-import { WalletService } from '../wallet/wallet.service.js';
+import { logger } from '../../infra/logger.js';
+
 import { NotificationService } from '../notifications/notification.service.js';
 
 export class PaymentService {
@@ -49,6 +50,11 @@ export class PaymentService {
             },
         });
 
+        // 5. Return Paystack data
+        return {
+            authorization_url: paystackRes.data.authorization_url,
+            reference,
+        };
     }
 
     /**
@@ -146,7 +152,7 @@ export class PaymentService {
             });
 
             if (!transaction) {
-                console.warn(`Transaction not found or already processed: ${reference}`);
+                logger.warn(`Transaction not found or already processed: ${reference}`);
                 return;
             }
 
@@ -156,65 +162,85 @@ export class PaymentService {
             if (paystackData.data.status !== 'success') {
                 await tx.transaction.update({
                     where: { id: transaction.id },
-                    data: { status: 'FAILED', metadata: { ... (transaction.metadata as object), error: 'Paystack verification failed' } },
+                    data: { status: 'FAILED', metadata: { ...(transaction.metadata as object), error: 'Paystack verification failed' } },
                 });
                 return;
             }
 
-            // 3. Update Transaction to COMPLETED
+            // 3. Handle based on type and capture Balance Before/After
+            let balanceBefore = null;
+            let balanceAfter = null;
+
+            if (transaction.type === 'DEPOSIT') {
+                const wallet = await tx.wallet.findUnique({ where: { id: transaction.walletId } });
+                if (wallet) {
+                    balanceBefore = wallet.balance;
+                    balanceAfter = balanceBefore.add(transaction.amount);
+
+                    // Credit the Wallet
+                    await tx.wallet.update({
+                        where: { id: transaction.walletId },
+                        data: {
+                            balance: {
+                                increment: transaction.amount,
+                            },
+                        },
+                    });
+                }
+            } else if (transaction.type === 'GOAL_FUNDING' && transaction.goalId) {
+                const goal = await tx.goal.findUnique({ where: { id: transaction.goalId } });
+                if (goal) {
+                    balanceBefore = goal.currentAmount;
+                    balanceAfter = balanceBefore.add(transaction.amount);
+
+                    // Credit the Goal directly
+                    const updatedGoal = await tx.goal.update({
+                        where: { id: transaction.goalId },
+                        data: {
+                            currentAmount: {
+                                increment: transaction.amount,
+                            },
+                        },
+                    });
+
+                    // Check if goal reached
+                    if (updatedGoal.currentAmount.greaterThanOrEqualTo(updatedGoal.targetAmount)) {
+                        await tx.goal.update({
+                            where: { id: transaction.goalId },
+                            data: { status: 'COMPLETED' },
+                        });
+                    }
+                }
+            }
+
+            // 4. Update Transaction to COMPLETED with snapshots
             const updatedTransaction = await tx.transaction.update({
                 where: { id: transaction.id },
                 data: {
                     status: 'COMPLETED',
+                    balanceBefore,
+                    balanceAfter,
                     metadata: {
                         ...(transaction.metadata as object),
                         paystack_raw: paystackData.data,
-                    },
+                    } as any,
                 },
             });
 
-            // 4. Handle based on type
-            if (transaction.type === 'DEPOSIT') {
-                // Credit the Wallet
-                await tx.wallet.update({
-                    where: { id: transaction.walletId },
-                    data: {
-                        balance: {
-                            increment: transaction.amount,
-                        },
-                    },
-                });
-            } else if (transaction.type === 'GOAL_FUNDING' && transaction.goalId) {
-                // Credit the Goal directly
-                const updatedGoal = await tx.goal.update({
-                    where: { id: transaction.goalId },
-                    data: {
-                        currentAmount: {
-                            increment: transaction.amount,
-                        },
-                    },
-                });
-
-                // Check if goal reached
-                if (updatedGoal.currentAmount.greaterThanOrEqualTo(updatedGoal.targetAmount)) {
-                    await tx.goal.update({
-                        where: { id: transaction.goalId },
-                        data: { status: 'COMPLETED' },
-                    });
-                }
-            }
-
-            console.info(`✅ Successfully fulfilled ${transaction.type} for reference: ${reference}`);
+            logger.info(`✅ Successfully fulfilled ${transaction.type} for reference: ${reference}`);
 
             // 5. Notify User
             if (transaction.type === 'DEPOSIT') {
-                await NotificationService.send({
-                    userId: transaction.walletId, // Wallet ID is used as fallback, but service needs userId
-                    title: 'Deposit Successful',
-                    message: `Your deposit of ${transaction.amount} GHS was successful.`,
-                    category: 'TRANSACTION',
-                    channels: ['IN_APP', 'SMS']
-                });
+                const wallet = await tx.wallet.findUnique({ where: { id: transaction.walletId }, select: { userId: true } });
+                if (wallet) {
+                    await NotificationService.send({
+                        userId: wallet.userId,
+                        title: 'Deposit Successful',
+                        message: `Your deposit of ${transaction.amount} GHS was successful.`,
+                        category: 'TRANSACTION',
+                        channels: ['IN_APP', 'SMS']
+                    });
+                }
             } else if (transaction.type === 'GOAL_FUNDING' && transaction.goalId) {
                 const goal = await tx.goal.findUnique({ where: { id: transaction.goalId } });
                 if (goal) {
