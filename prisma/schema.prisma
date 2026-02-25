@@ -31,6 +31,7 @@ model User {
   wallet         Wallet?
   goals          Goal[]
   notifications  Notification[]
+  auditLogs      AuditLog[]
 }
 
 model Session {
@@ -248,8 +249,10 @@ model Transaction {
   type            TransactionType
   amount          Decimal           @db.Decimal(12, 2)
   currency        String            @default("GHS")
-  reference       String?
+  reference       String?           @unique
   status          TransactionStatus @default(COMPLETED)
+  balanceBefore   Decimal?          @db.Decimal(12, 2)
+  balanceAfter    Decimal?          @db.Decimal(12, 2)
   metadata        Json?
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
@@ -281,4 +284,25 @@ model Notification {
 
   @@index([userId])
   @@index([createdAt])
+}
+
+// ==================== AUDIT LOGS ====================
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  action    String   // e.g., "UPDATE_WALLET_BALANCE", "CHANGE_SYSTEM_CONFIG"
+  resource  String   // e.g., "Wallet", "MerchantProfile"
+  resourceId String?
+  oldValue  Json?
+  newValue  Json?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([action])
+  @@index([resource, resourceId])
 }

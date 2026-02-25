@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { ProductsService } from './products.service.js';
 import { requireAuth, requireRole } from '../auth/auth.middleware.js';
-import { ApiException } from '../../shared/exceptions/api.exception.js';
+
 
 const router = Router();
 

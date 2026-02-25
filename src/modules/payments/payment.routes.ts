@@ -4,6 +4,7 @@ import { PaymentService } from './payment.service.js';
 import { success, error } from '../../shared/utils/response.util.js';
 import { requireAuth } from '../auth/auth.middleware.js';
 import { env } from '../../config/env.config.js';
+import { logger } from '../../infra/logger.js';
 
 const router = Router();
 
@@ -22,11 +23,12 @@ router.post('/deposit', requireAuth, async (req: Request, res: Response) => {
 
         const result = await PaymentService.initializeDeposit(userId, amount);
         return success(res, result);
-    } catch (err: any) {
-        console.error('Initialize deposit error:', err);
-        const code = err.code || 'INTERNAL_ERROR';
-        const statusCode = err.statusCode || 500;
-        return error(res, code, err.message, statusCode);
+    } catch (err: unknown) {
+        const error = err as any;
+        logger.error(error, 'Initialize deposit error:');
+        const code = error.code || 'INTERNAL_ERROR';
+        const statusCode = error.statusCode || 500;
+        return error(res, code, error.message, statusCode);
     }
 });
 
@@ -49,11 +51,12 @@ router.post('/goal-funding', requireAuth, async (req: Request, res: Response) =>
 
         const result = await PaymentService.initializeGoalFunding(userId, goalId, amount);
         return success(res, result);
-    } catch (err: any) {
-        console.error('Initialize goal funding error:', err);
-        const code = err.code || 'INTERNAL_ERROR';
-        const statusCode = err.statusCode || 500;
-        return error(res, code, err.message, statusCode);
+    } catch (err: unknown) {
+        const error = err as any;
+        logger.error(error, 'Initialize goal funding error:');
+        const code = error.code || 'INTERNAL_ERROR';
+        const statusCode = error.statusCode || 500;
+        return error(res, code, error.message, statusCode);
     }
 });
 
@@ -66,11 +69,12 @@ router.get('/verify/:reference', requireAuth, async (req: Request, res: Response
         const { reference } = req.params;
         const result = await PaymentService.verifyPayment(reference);
         return success(res, result);
-    } catch (err: any) {
-        console.error('Verify payment error:', err);
-        const code = err.code || 'INTERNAL_ERROR';
-        const statusCode = err.statusCode || 500;
-        return error(res, code, err.message, statusCode);
+    } catch (err: unknown) {
+        const error = err as any;
+        logger.error(error, 'Verify payment error:');
+        const code = error.code || 'INTERNAL_ERROR';
+        const statusCode = error.statusCode || 500;
+        return error(res, code, error.message, statusCode);
     }
 });
 
@@ -92,7 +96,7 @@ router.post('/webhook', async (req: Request, res: Response) => {
             .digest('hex');
 
         if (hash !== signature) {
-            console.warn('⚠️ Invalid Paystack Webhook Signature');
+            logger.warn('⚠️ Invalid Paystack Webhook Signature');
             return res.status(401).send('Invalid signature');
         }
 
@@ -101,14 +105,14 @@ router.post('/webhook', async (req: Request, res: Response) => {
 
         // 3. Process Event
         const event = req.body;
-        console.info(`🔔 Paystack Webhook received: ${event.event}`);
+        logger.info(`🔔 Paystack Webhook received: ${event.event}`);
 
         if (event.event === 'charge.success') {
             const { reference } = event.data;
             await PaymentService.fulfillPayment(reference);
         }
-    } catch (err: any) {
-        console.error('Webhook error:', err);
+    } catch (err: unknown) {
+        logger.error(err as Error, 'Webhook error:');
         // We already sent 200, so we just log the processing error
     }
 });

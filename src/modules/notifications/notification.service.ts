@@ -1,5 +1,6 @@
 import { prisma } from '../../infra/prisma.client.js';
 import { env } from '../../config/env.config.js';
+import { logger } from '../../infra/logger.js';
 import Twilio from 'twilio';
 import { NotificationCategory } from '@prisma/client';
 
@@ -15,7 +16,7 @@ export interface NotificationPayload {
     message: string;
     category?: NotificationCategory;
     channels: ('IN_APP' | 'SMS' | 'WHATSAPP' | 'EMAIL')[];
-    metadata?: any;
+    metadata?: Record<string, unknown>;
     emailHtml?: string; // Optional custom HTML for email
 }
 
@@ -25,7 +26,7 @@ export class NotificationService {
      */
     static async send(payload: NotificationPayload) {
         const { userId, title, message, category = 'SYSTEM', channels, metadata, emailHtml } = payload;
-        const results: any = {};
+        const results: Record<string, unknown> = {};
 
         // 1. In-app Notification (Database)
         if (channels.includes('IN_APP')) {
@@ -36,17 +37,18 @@ export class NotificationService {
                         title,
                         message,
                         category,
-                        metadata
+                        metadata: metadata as any
                     }
                 });
-            } catch (err: any) {
-                console.error('In-app notification failed:', err.message);
-                results.inAppError = err.message;
+            } catch (err: unknown) {
+                const error = err as Error;
+                logger.error(error, 'In-app notification failed:');
+                results.inAppError = error.message;
             }
         }
 
         // Fetch user for phone/email if needed
-        let user: any = null;
+        let user: { phone: string | null; email: string | null; name: string | null } | null = null;
         if (channels.some(c => ['SMS', 'WHATSAPP', 'EMAIL'].includes(c))) {
             user = await prisma.user.findUnique({ where: { id: userId }, select: { phone: true, email: true, name: true } });
         }
@@ -61,12 +63,13 @@ export class NotificationService {
                         to: user.phone
                     });
                 } else {
-                    console.info(`[DEV SMS] to ${user.phone}: ${title} - ${message}`);
+                    logger.info(`[DEV SMS] to ${user.phone}: ${title} - ${message}`);
                     results.sms = 'DEV_MODE_MOCK';
                 }
-            } catch (err: any) {
-                console.error('SMS notification failed:', err.message);
-                results.smsError = err.message;
+            } catch (err: unknown) {
+                const error = err as Error;
+                logger.error(error, 'SMS notification failed:');
+                results.smsError = error.message;
             }
         }
 
@@ -81,12 +84,13 @@ export class NotificationService {
                         to: `whatsapp:${user.phone}`
                     });
                 } else {
-                    console.info(`[DEV WhatsApp] to ${user.phone}: ${title} - ${message}`);
+                    logger.info(`[DEV WhatsApp] to ${user.phone}: ${title} - ${message}`);
                     results.whatsapp = 'DEV_MODE_MOCK';
                 }
-            } catch (err: any) {
-                console.error('WhatsApp notification failed:', err.message);
-                results.whatsappError = err.message;
+            } catch (err: unknown) {
+                const error = err as Error;
+                logger.error(error, 'WhatsApp notification failed:');
+                results.whatsappError = error.message;
             }
         }
 
@@ -99,9 +103,10 @@ export class NotificationService {
                     subject: title,
                     html: emailHtml || `<p>Hi ${user.name || 'there'},</p><p>${message}</p>`,
                 });
-            } catch (err: any) {
-                console.error('Email notification failed:', err.message);
-                results.emailError = err.message;
+            } catch (err: unknown) {
+                const error = err as Error;
+                logger.error(error, 'Email notification failed:');
+                results.emailError = error.message;
             }
         }
 

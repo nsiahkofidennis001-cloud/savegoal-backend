@@ -1,5 +1,6 @@
 import sgMail from '@sendgrid/mail';
 import { env } from '../config/env.config.js';
+import { logger } from './logger.js';
 
 /**
  * Initialize SendGrid client if API key is provided and not a placeholder
@@ -44,15 +45,16 @@ export class EmailClient {
                 return { id: response.headers['x-message-id'] || 'sg-success' };
             } else {
                 // Development Mode - Log to console
-                console.info('✉️ [DEV EMAIL (SENDGRID MOCK)]');
-                console.info(`   From:    ${from}`);
-                console.info(`   To:      ${to}`);
-                console.info(`   Subject: ${subject}`);
-                console.info('   Body Snippet:', html.substring(0, 100) + '...');
+                logger.info('✉️ [DEV EMAIL (SENDGRID MOCK)]');
+                logger.info(`   From:    ${from}`);
+                logger.info(`   To:      ${to}`);
+                logger.info(`   Subject: ${subject}`);
+                logger.info({ snippet: html.substring(0, 100) + '...' }, '   Body Snippet:');
                 return { id: 'dev-mode-mock-id' };
             }
-        } catch (err: any) {
-            console.error('❌ Failed to send email via SendGrid:', err.response?.body || err.message);
+        } catch (err: unknown) {
+            const error = err as any;
+            logger.error(error, '❌ Failed to send email via SendGrid:');
             // We usually don't want to crash the whole request if an email fails, 
             // but we should at least log it.
             return null;

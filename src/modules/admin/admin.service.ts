@@ -1,7 +1,7 @@
 import { prisma } from '../../infra/prisma.client.js';
 import { ApiException } from '../../shared/exceptions/api.exception.js';
 
-import { NotificationService } from '../notifications/notification.service.js';
+
 
 export class AdminService {
     /**
@@ -140,62 +140,17 @@ export class AdminService {
     /**
      * Approve or Reject a merchant payout
      */
-    static async processPayout(transactionId: string, status: 'COMPLETED' | 'FAILED', note?: string) {
-        const transaction = await prisma.transaction.findUnique({
-            where: { id: transactionId },
-            include: { merchant: true }
-        });
+    static async processPayout(transactionId: string, status: 'COMPLETED' | 'FAILED', note?: string, adminId?: string) {
+        // Fallback adminId if not provided (should be passed from routes)
+        const activeAdminId = adminId || 'SYSTEM_ADMIN';
 
-        if (!transaction || transaction.type !== 'MERCHANT_PAYOUT') {
-            throw new ApiException(404, 'NOT_FOUND', 'Payout transaction not found');
+        const { PayoutService } = await import('../wallet/payout.service.js');
+
+        if (status === 'COMPLETED') {
+            return PayoutService.approvePayout(activeAdminId, transactionId);
+        } else {
+            return PayoutService.rejectPayout(activeAdminId, transactionId, note || 'Rejected by admin');
         }
-
-        if (transaction.status !== 'PENDING') {
-            throw new ApiException(400, 'BAD_REQUEST', 'Transaction is already processed');
-        }
-
-        return prisma.$transaction(async (tx) => {
-            // 1. Update Transaction
-            const updatedTx = await tx.transaction.update({
-                where: { id: transactionId },
-                data: {
-                    status,
-                    metadata: {
-                        ...(transaction.metadata as object),
-                        adminNote: note,
-                        processedAt: new Date()
-                    }
-                }
-            });
-
-            // 2. If rejected, restore the merchant balance
-            if (status === 'FAILED' && transaction.merchantProfileId) {
-                await tx.merchantProfile.update({
-                    where: { id: transaction.merchantProfileId },
-                    data: { balance: { increment: transaction.amount } }
-                });
-            }
-
-            // 3. Notify Merchant
-            const merchant = await tx.merchantProfile.findUnique({
-                where: { id: transaction.merchantProfileId! },
-                include: { user: true }
-            });
-
-            if (merchant) {
-                await NotificationService.send({
-                    userId: merchant.userId,
-                    title: status === 'COMPLETED' ? 'Payout Successful' : 'Payout Failed',
-                    message: status === 'COMPLETED'
-                        ? `Your payout of ${transaction.amount} GHS has been successfully processed.`
-                        : `Your payout of ${transaction.amount} GHS failed and has been refunded to your balance. Note: ${note || 'None'}`,
-                    category: 'TRANSACTION',
-                    channels: ['IN_APP', 'WHATSAPP']
-                });
-            }
-
-            return updatedTx;
-        });
     }
 
     /**

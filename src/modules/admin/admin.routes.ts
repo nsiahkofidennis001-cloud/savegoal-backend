@@ -17,8 +17,9 @@ router.get('/stats', async (req: Request, res: Response) => {
     try {
         const stats = await AdminService.getSystemStats();
         return success(res, stats);
-    } catch (err: any) {
-        return error(res, 'INTERNAL_ERROR', err.message);
+    } catch (err: unknown) {
+        const errObj = err as Error;
+        return error(res, 'INTERNAL_ERROR', errObj.message);
     }
 });
 
@@ -32,8 +33,9 @@ router.get('/users', async (req: Request, res: Response) => {
         const limit = parseInt(req.query.limit as string) || 20;
         const result = await AdminService.listUsers(page, limit);
         return success(res, result);
-    } catch (err: any) {
-        return error(res, 'INTERNAL_ERROR', err.message);
+    } catch (err: unknown) {
+        const errObj = err as Error;
+        return error(res, 'INTERNAL_ERROR', errObj.message);
     }
 });
 
@@ -45,8 +47,9 @@ router.get('/merchants', async (req: Request, res: Response) => {
     try {
         const merchants = await AdminService.listMerchants();
         return success(res, merchants);
-    } catch (err: any) {
-        return error(res, 'INTERNAL_ERROR', err.message);
+    } catch (err: unknown) {
+        const errObj = err as Error;
+        return error(res, 'INTERNAL_ERROR', errObj.message);
     }
 });
 
@@ -62,8 +65,9 @@ router.patch('/merchants/:id/verify', async (req: Request, res: Response) => {
         }
         const result = await AdminService.verifyMerchant(req.params.id, isVerified);
         return success(res, result);
-    } catch (err: any) {
-        return error(res, err.code || 'INTERNAL_ERROR', err.message, err.statusCode || 500);
+    } catch (err: unknown) {
+        const errObj = err as any;
+        return error(res, errObj.code || 'INTERNAL_ERROR', errObj.message, errObj.statusCode || 500);
     }
 });
 
@@ -75,8 +79,9 @@ router.get('/kyc/pending', async (req: Request, res: Response) => {
     try {
         const pending = await AdminService.listPendingKyc();
         return success(res, pending);
-    } catch (err: any) {
-        return error(res, 'INTERNAL_ERROR', err.message);
+    } catch (err: unknown) {
+        const errObj = err as Error;
+        return error(res, 'INTERNAL_ERROR', errObj.message);
     }
 });
 
@@ -92,8 +97,9 @@ router.patch('/kyc/:userId/verify', async (req: Request, res: Response) => {
         }
         const result = await AdminService.verifyKyc(req.params.userId, status, note);
         return success(res, result);
-    } catch (err: any) {
-        return error(res, err.code || 'INTERNAL_ERROR', err.message, err.statusCode || 500);
+    } catch (err: unknown) {
+        const errObj = err as any;
+        return error(res, errObj.code || 'INTERNAL_ERROR', errObj.message, errObj.statusCode || 500);
     }
 });
 
@@ -105,8 +111,9 @@ router.get('/payouts/pending', async (req: Request, res: Response) => {
     try {
         const pending = await AdminService.listPendingPayouts();
         return success(res, pending);
-    } catch (err: any) {
-        return error(res, 'INTERNAL_ERROR', err.message);
+    } catch (err: unknown) {
+        const errObj = err as Error;
+        return error(res, 'INTERNAL_ERROR', errObj.message);
     }
 });
 
@@ -120,10 +127,11 @@ router.patch('/payouts/:id/process', async (req: Request, res: Response) => {
         if (!['COMPLETED', 'FAILED'].includes(status)) {
             return error(res, 'VALIDATION_ERROR', 'Status must be COMPLETED or FAILED', 400);
         }
-        const result = await AdminService.processPayout(req.params.id, status, note);
+        const result = await AdminService.processPayout(req.params.id, status, note, req.user!.id);
         return success(res, result);
-    } catch (err: any) {
-        return error(res, err.code || 'INTERNAL_ERROR', err.message, err.statusCode || 500);
+    } catch (err: unknown) {
+        const errObj = err as any;
+        return error(res, errObj.code || 'INTERNAL_ERROR', errObj.message, errObj.statusCode || 500);
     }
 });
 
@@ -137,8 +145,9 @@ router.get('/transactions', async (req: Request, res: Response) => {
         const limit = parseInt(req.query.limit as string) || 50;
         const result = await AdminService.getGlobalTransactions(page, limit);
         return success(res, result);
-    } catch (err: any) {
-        return error(res, 'INTERNAL_ERROR', err.message);
+    } catch (err: unknown) {
+        const errObj = err as Error;
+        return error(res, 'INTERNAL_ERROR', errObj.message);
     }
 });
 

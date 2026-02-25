@@ -4,6 +4,7 @@ import { KycService } from './kyc.service.js';
 import { StorageClient } from '../../infra/storage.client.js';
 import { success, error } from '../../shared/utils/response.util.js';
 import { requireAuth } from '../auth/auth.middleware.js';
+import { logger } from '../../infra/logger.js';
 
 const router = Router();
 const upload = multer({
@@ -21,8 +22,9 @@ router.get('/status', async (req: Request, res: Response) => {
     try {
         const kycStatus = await KycService.getKycStatus(req.user!.id);
         return success(res, kycStatus);
-    } catch (err: any) {
-        return error(res, 'INTERNAL_ERROR', err.message);
+    } catch (err: unknown) {
+        const errObj = err as Error;
+        return error(res, 'INTERNAL_ERROR', errObj.message);
     }
 });
 
@@ -42,7 +44,7 @@ router.post('/upload-id', upload.fields([
         }
 
         const userId = req.user!.id;
-        const uploadResults: any = {};
+        const uploadResults: Record<string, string> = {};
 
         // Upload Front
         const frontResult = await StorageClient.upload({
@@ -50,7 +52,7 @@ router.post('/upload-id', upload.fields([
             file: files.front[0].buffer,
             contentType: files.front[0].mimetype
         });
-        uploadResults.idFrontImageUrl = frontResult.url;
+        uploadResults.idFrontImageUrl = frontResult.url!;
 
         // Upload Back (Optional for some IDs, but supported)
         if (files.back) {
@@ -59,7 +61,7 @@ router.post('/upload-id', upload.fields([
                 file: files.back[0].buffer,
                 contentType: files.back[0].mimetype
             });
-            uploadResults.idBackImageUrl = backResult.url;
+            uploadResults.idBackImageUrl = backResult.url!;
         }
 
         await KycService.updateIdImages(userId, uploadResults);
@@ -68,9 +70,10 @@ router.post('/upload-id', upload.fields([
             message: 'ID images uploaded successfully',
             urls: uploadResults
         });
-    } catch (err: any) {
-        console.error('ID upload error:', err);
-        return error(res, 'UPLOAD_ERROR', err.message);
+    } catch (err: unknown) {
+        const errObj = err as Error;
+        logger.error(errObj, 'ID upload error:');
+        return error(res, 'UPLOAD_ERROR', errObj.message);
     }
 });
 
@@ -97,9 +100,10 @@ router.post('/upload-selfie', upload.single('selfie'), async (req: Request, res:
             message: 'Selfie uploaded successfully',
             url: result.url
         });
-    } catch (err: any) {
-        console.error('Selfie upload error:', err);
-        return error(res, 'UPLOAD_ERROR', err.message);
+    } catch (err: unknown) {
+        const errObj = err as Error;
+        logger.error(errObj, 'Selfie upload error:');
+        return error(res, 'UPLOAD_ERROR', errObj.message);
     }
 });
 
@@ -124,11 +128,12 @@ router.post('/submit', async (req: Request, res: Response) => {
         });
 
         return success(res, result);
-    } catch (err: any) {
-        console.error('KYC submission error:', err);
-        const code = err.code || 'INTERNAL_ERROR';
-        const statusCode = err.statusCode || 500;
-        return error(res, code, err.message, statusCode);
+    } catch (err: unknown) {
+        const errObj = err as any;
+        logger.error(errObj, 'KYC submission error:');
+        const code = errObj.code || 'INTERNAL_ERROR';
+        const statusCode = errObj.statusCode || 500;
+        return error(res, code, errObj.message, statusCode);
     }
 });
 

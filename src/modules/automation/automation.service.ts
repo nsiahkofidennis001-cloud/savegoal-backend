@@ -1,5 +1,6 @@
 import { prisma } from '../../infra/prisma.client.js';
-import { ApiException } from '../../shared/exceptions/api.exception.js';
+import { logger } from '../../infra/logger.js';
+
 import { TransactionType } from '@prisma/client';
 
 export class AutomationService {
@@ -32,12 +33,12 @@ export class AutomationService {
             include: { user: { include: { wallet: true } } }
         });
 
-        console.info(`🤖 Found ${goals.length} goals due for monthly automated savings on day ${dayToMatch}`);
+        logger.info(`🤖 Found ${goals.length} goals due for monthly automated savings on day ${dayToMatch}`);
 
         const results = {
             success: 0,
             failed: 0,
-            errors: [] as any[]
+            errors: [] as { goalId: string; error: string }[]
         };
 
         for (const goal of goals) {
@@ -59,9 +60,16 @@ export class AutomationService {
                         where: { id: goal.user.wallet!.id }
                     });
 
-                    if (!wallet || wallet.balance.lessThan(amountToDeduct)) {
+                    if (!wallet) {
+                        throw new Error('Wallet not found during automated debit');
+                    }
+
+                    if (wallet.balance.lessThan(amountToDeduct)) {
                         throw new Error('Insufficient wallet balance');
                     }
+
+                    const balanceBefore = wallet.balance;
+                    const balanceAfter = balanceBefore.sub(amountToDeduct);
 
                     // 1. Deduct from wallet
                     await tx.wallet.update({
@@ -78,7 +86,7 @@ export class AutomationService {
                         }
                     });
 
-                    // 3. Create transaction record
+                    // 3. Create transaction record with snapshots
                     await tx.transaction.create({
                         data: {
                             walletId: wallet.id,
@@ -87,6 +95,8 @@ export class AutomationService {
                             amount: amountToDeduct,
                             status: 'COMPLETED',
                             reference: `AUTO-${goal.id}-${today.toISOString().split('T')[0]}`,
+                            balanceBefore: balanceBefore,
+                            balanceAfter: balanceAfter,
                             metadata: {
                                 isAutomated: true,
                                 month: today.getMonth() + 1,
@@ -105,10 +115,11 @@ export class AutomationService {
                 });
 
                 results.success++;
-            } catch (err: any) {
-                console.error(`❌ Failed automated saving for goal ${goal.id}:`, err.message);
+            } catch (err: unknown) {
+                const error = err as Error;
+                logger.error(error, `❌ Failed automated saving for goal ${goal.id}:`);
                 results.failed++;
-                results.errors.push({ goalId: goal.id, error: err.message });
+                results.errors.push({ goalId: goal.id, error: error.message });
             }
         }
 
