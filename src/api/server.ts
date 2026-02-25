@@ -45,7 +45,7 @@ app.use(
     cors({
         origin: env.NODE_ENV === 'production'
             ? ['https://savegoal.com', 'https://save-goal-frontend.vercel.app']
-            : '*',
+            : ['http://localhost:3000', 'http://127.0.0.1:3000'],
         credentials: true,
     })
 );

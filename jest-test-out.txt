@@ -1,0 +1,21 @@
+
+> savegoal-backend@1.0.0 test
+> node --experimental-vm-modules node_modules/jest/bin/jest.js tests/phase2.test.ts
+
+(node:28164) ExperimentalWarning: VM Modules is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+[19:15:55 UTC] [32mINFO[39m: [36m✅ Redis connected[39m
+PASS tests/phase2.test.ts (10.75 s)
+  Phase 2: Core Savings Logic
+    √ should create a wallet automatically or on first get (296 ms)
+    √ should deposit money into wallet (259 ms)
+    √ should create a savings goal (104 ms)
+    √ should list user goals (58 ms)
+    √ should fail to fund goal if insufficient funds (62 ms)
+    √ should fund goal successfully (231 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       6 passed, 6 total
+Snapshots:   0 total
+Time:        12.097 s
+Ran all test suites matching /tests\\phase2.test.ts/i.

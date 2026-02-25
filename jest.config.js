@@ -2,7 +2,7 @@ export default {
   testEnvironment: "node",
   testPathIgnorePatterns: ["/dist/"],
   transformIgnorePatterns: [
-    "node_modules/(?!better-auth)/"
+    "node_modules/(?!(better-auth|@better-auth|better-call|@better-call)/)"
   ],
   testMatch: [
     "<rootDir>/tests/**/*.test.ts"
@@ -11,10 +11,7 @@ export default {
     "^.+\\.(t|j|mj)sx?$": [
       "ts-jest",
       {
-        tsconfig: {
-          module: "CommonJS",
-          moduleResolution: "Node"
-        },
+        useESM: true,
       },
     ],
   },
@@ -22,4 +19,5 @@ export default {
     "^(\\.{1,2}/.*)\\.js$": "$1",
     "^@/(.*)$": "<rootDir>/src/$1"
   },
+  extensionsToTreatAsEsm: [".ts"],
 };
