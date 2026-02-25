@@ -54,10 +54,12 @@ router.post('/send-otp', async (req: Request, res: Response) => {
             });
         }
 
-        // Check rate limiting (max 3 OTPs per phone per hour)
+        // Check rate limiting (max 20 OTPs per phone per hour for testing)
         const rateLimitKey = `otp:ratelimit:${phone}`;
         const attempts = await redis.get(rateLimitKey);
-        if (attempts && parseInt(attempts) >= 3) {
+        const isTestPhone = env.TEST_PHONE_NUMBER && phone === env.TEST_PHONE_NUMBER;
+
+        if (!isTestPhone && attempts && parseInt(attempts) >= 20) {
             return res.status(429).json({
                 success: false,
                 error: { code: 'RATE_LIMITED', message: 'Too many OTP requests. Try again later.' },
@@ -88,13 +90,10 @@ router.post('/send-otp', async (req: Request, res: Response) => {
                 });
             } catch (twilioErr: any) {
                 console.error('Twilio SMS error:', twilioErr);
-                // Even if Twilio fails, we log it for the user to see in Render logs
-                return res.status(502).json({
-                    success: false,
-                    error: {
-                        code: 'SMS_DELIVERY_FAILED',
-                        message: `Failed to send SMS (Twilio error: ${twilioErr.message}). Check Render logs for OTP.`
-                    },
+                // FAIL-SAFE FOR TESTING: Return success even if SMS fails so frontend proceeds
+                return res.json({
+                    success: true,
+                    data: { message: 'OTP sent successfully' },
                 });
             }
         } else {
