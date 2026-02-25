@@ -42,7 +42,8 @@
     },
     "include": [
         "src/**/*",
-        "tests/**/*"
+        "tests/**/*",
+        "test-api.ts"
     ],
     "exclude": [
         "node_modules",

@@ -23,8 +23,11 @@ router.get('/status', async (req: Request, res: Response) => {
         const kycStatus = await KycService.getKycStatus(req.user!.id);
         return success(res, kycStatus);
     } catch (err: unknown) {
-        const errObj = err as Error;
-        return error(res, 'INTERNAL_ERROR', errObj.message);
+        const errObj = err as any;
+        logger.error(errObj, 'KYC status error:');
+        const code = errObj.code || 'INTERNAL_ERROR';
+        const statusCode = errObj.statusCode || 500;
+        return error(res, code, errObj.message, statusCode);
     }
 });
 
