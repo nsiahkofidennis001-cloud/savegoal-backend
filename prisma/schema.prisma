@@ -101,7 +101,9 @@ model Profile {
   // ID Verification
   idType      String?   // GHANA_CARD, PASSPORT, etc.
   idNumber    String?
-  idImageUrl  String?
+  idImageUrl  String?   // Front of ID
+  idBackImageUrl String? // Back of ID
+  selfieImageUrl String? // User selfie
 
   // Bank Details for Consumers
   bankName        String?
@@ -182,6 +184,7 @@ model Goal {
 model Product {
   id              String          @id @default(uuid())
   merchantProfileId String
+  categoryId      String?
   name            String
   description     String?
   price           Decimal         @db.Decimal(12, 2)
@@ -193,7 +196,32 @@ model Product {
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
   merchant        MerchantProfile @relation(fields: [merchantProfileId], references: [id], onDelete: Cascade)
+  category        ProductCategory? @relation(fields: [categoryId], references: [id])
+  variants        ProductVariant[]
   goals           Goal[]
+}
+
+model ProductCategory {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  description String?
+  image       String?
+  products    Product[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model ProductVariant {
+  id        String   @id @default(uuid())
+  productId String
+  name      String   // e.g., Size, Color
+  value     String   // e.g., XL, Blue
+  sku       String?  @unique
+  price     Decimal? @db.Decimal(12, 2)
+  stock     Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
 
 enum TransactionType {

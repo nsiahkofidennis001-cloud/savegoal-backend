@@ -12,6 +12,7 @@ export class ProductsService {
         currency?: string;
         image?: string;
         stock?: number;
+        categoryId?: string;
     }) {
         const merchant = await prisma.merchantProfile.findUnique({
             where: { userId }
@@ -29,24 +30,98 @@ export class ProductsService {
                 price: data.price,
                 currency: data.currency || 'GHS',
                 image: data.image,
-                stock: data.stock
+                stock: data.stock,
+                categoryId: data.categoryId
             }
         });
     }
 
     /**
-     * List all products (public)
+     * List all products with filters
      */
-    static async listProducts() {
+    static async listProducts(filters: {
+        categoryId?: string;
+        searchTerm?: string;
+        minPrice?: number;
+        maxPrice?: number;
+    } = {}) {
+        const { categoryId, searchTerm, minPrice, maxPrice } = filters;
+
         return prisma.product.findMany({
-            where: { isAvailable: true },
+            where: {
+                isAvailable: true,
+                ...(categoryId && { categoryId }),
+                ...(searchTerm && {
+                    OR: [
+                        { name: { contains: searchTerm, mode: 'insensitive' } },
+                        { description: { contains: searchTerm, mode: 'insensitive' } },
+                    ]
+                }),
+                ...(minPrice !== undefined || maxPrice !== undefined) && {
+                    price: {
+                        ...(minPrice !== undefined && { gte: minPrice }),
+                        ...(maxPrice !== undefined && { lte: maxPrice }),
+                    }
+                }
+            },
             include: {
+                category: true,
+                variants: true,
                 merchant: {
                     select: {
                         businessName: true,
                         isVerified: true
                     }
                 }
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+    }
+
+    /**
+     * Categories Management
+     */
+    static async listCategories() {
+        return prisma.productCategory.findMany({
+            include: {
+                _count: {
+                    select: { products: true }
+                }
+            }
+        });
+    }
+
+    static async createCategory(data: { name: string; description?: string; image?: string }) {
+        return prisma.productCategory.create({ data });
+    }
+
+    /**
+     * Variants Management
+     */
+    static async addVariant(userId: string, productId: string, data: {
+        name: string;
+        value: string;
+        sku?: string;
+        price?: number;
+        stock?: number;
+    }) {
+        const product = await prisma.product.findUnique({
+            where: { id: productId },
+            include: { merchant: true }
+        });
+
+        if (!product || product.merchant.userId !== userId) {
+            throw new ApiException(403, 'FORBIDDEN', 'Unauthorized to manage variants for this product');
+        }
+
+        return prisma.productVariant.create({
+            data: {
+                productId,
+                name: data.name,
+                value: data.value,
+                sku: data.sku,
+                price: data.price,
+                stock: data.stock
             }
         });
     }
@@ -58,6 +133,8 @@ export class ProductsService {
         const product = await prisma.product.findUnique({
             where: { id },
             include: {
+                category: true,
+                variants: true,
                 merchant: {
                     select: {
                         businessName: true,
@@ -83,6 +160,7 @@ export class ProductsService {
         price: number;
         image: string;
         stock: number;
+        categoryId: string;
         isAvailable: boolean;
     }>) {
         const product = await prisma.product.findUnique({

@@ -14,8 +14,9 @@ export interface NotificationPayload {
     title: string;
     message: string;
     category?: NotificationCategory;
-    channels: ('IN_APP' | 'SMS' | 'WHATSAPP')[];
+    channels: ('IN_APP' | 'SMS' | 'WHATSAPP' | 'EMAIL')[];
     metadata?: any;
+    emailHtml?: string; // Optional custom HTML for email
 }
 
 export class NotificationService {
@@ -23,7 +24,7 @@ export class NotificationService {
      * Send a notification through multiple channels
      */
     static async send(payload: NotificationPayload) {
-        const { userId, title, message, category = 'SYSTEM', channels, metadata } = payload;
+        const { userId, title, message, category = 'SYSTEM', channels, metadata, emailHtml } = payload;
         const results: any = {};
 
         // 1. In-app Notification (Database)
@@ -44,24 +45,23 @@ export class NotificationService {
             }
         }
 
-        // Fetch user for phone number if needed
-        let userPhone: string | null = null;
-        if (channels.includes('SMS') || channels.includes('WHATSAPP')) {
-            const user = await prisma.user.findUnique({ where: { id: userId }, select: { phone: true } });
-            userPhone = user?.phone || null;
+        // Fetch user for phone/email if needed
+        let user: any = null;
+        if (channels.some(c => ['SMS', 'WHATSAPP', 'EMAIL'].includes(c))) {
+            user = await prisma.user.findUnique({ where: { id: userId }, select: { phone: true, email: true, name: true } });
         }
 
         // 2. SMS (Twilio)
-        if (channels.includes('SMS') && userPhone) {
+        if (channels.includes('SMS') && user?.phone) {
             try {
                 if (twilioClient && env.TWILIO_PHONE_NUMBER) {
                     results.sms = await twilioClient.messages.create({
                         body: `${title}\n${message}`,
                         from: env.TWILIO_PHONE_NUMBER,
-                        to: userPhone
+                        to: user.phone
                     });
                 } else {
-                    console.info(`[DEV SMS] to ${userPhone}: ${title} - ${message}`);
+                    console.info(`[DEV SMS] to ${user.phone}: ${title} - ${message}`);
                     results.sms = 'DEV_MODE_MOCK';
                 }
             } catch (err: any) {
@@ -71,22 +71,37 @@ export class NotificationService {
         }
 
         // 3. WhatsApp (Twilio)
-        if (channels.includes('WHATSAPP') && userPhone) {
+        if (channels.includes('WHATSAPP') && user?.phone) {
             try {
                 if (twilioClient && env.TWILIO_PHONE_NUMBER) {
                     // WhatsApp numbers in Twilio must be prefixed with 'whatsapp:'
                     results.whatsapp = await twilioClient.messages.create({
                         body: `*${title}*\n${message}`,
                         from: `whatsapp:${env.TWILIO_PHONE_NUMBER}`,
-                        to: `whatsapp:${userPhone}`
+                        to: `whatsapp:${user.phone}`
                     });
                 } else {
-                    console.info(`[DEV WhatsApp] to ${userPhone}: ${title} - ${message}`);
+                    console.info(`[DEV WhatsApp] to ${user.phone}: ${title} - ${message}`);
                     results.whatsapp = 'DEV_MODE_MOCK';
                 }
             } catch (err: any) {
                 console.error('WhatsApp notification failed:', err.message);
                 results.whatsappError = err.message;
+            }
+        }
+
+        // 4. Email (Resend)
+        if (channels.includes('EMAIL') && user?.email) {
+            try {
+                const { EmailClient } = await import('../../infra/email.client.js');
+                results.email = await EmailClient.send({
+                    to: user.email,
+                    subject: title,
+                    html: emailHtml || `<p>Hi ${user.name || 'there'},</p><p>${message}</p>`,
+                });
+            } catch (err: any) {
+                console.error('Email notification failed:', err.message);
+                results.emailError = err.message;
             }
         }
 

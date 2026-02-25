@@ -4,16 +4,40 @@ import { KYCStatus } from '@prisma/client';
 
 export class KycService {
     /**
-     * Submit KYC data for a user
+     * Update ID images for a user
      */
-    static async submitKyc(userId: string, data: {
-        idType: string;
-        idNumber: string;
-        idImageUrl?: string;
-        bankName?: string;
-        bankAccountNo?: string;
-        bankAccountName?: string;
+    static async updateIdImages(userId: string, data: {
+        idFrontImageUrl?: string;
+        idBackImageUrl?: string;
     }) {
+        const profile = await this.getProfile(userId);
+
+        return prisma.profile.update({
+            where: { id: profile.id },
+            data: {
+                idImageUrl: data.idFrontImageUrl, // Map to idImageUrl for backward compat
+                idBackImageUrl: data.idBackImageUrl,
+                kycStatus: KYCStatus.PENDING,
+            }
+        });
+    }
+
+    /**
+     * Update Selfie image for a user
+     */
+    static async updateSelfieImage(userId: string, selfieImageUrl: string) {
+        const profile = await this.getProfile(userId);
+
+        return prisma.profile.update({
+            where: { id: profile.id },
+            data: {
+                selfieImageUrl,
+                kycStatus: KYCStatus.PENDING,
+            }
+        });
+    }
+
+    private static async getProfile(userId: string) {
         const profile = await prisma.profile.findFirst({
             where: { userId }
         });
@@ -22,17 +46,30 @@ export class KycService {
             throw new ApiException(404, 'NOT_FOUND', 'User profile not found');
         }
 
-        // Only allow submission if not already verified
         if (profile.kycStatus === KYCStatus.VERIFIED) {
             throw new ApiException(400, 'ALREADY_VERIFIED', 'Your account is already verified');
         }
+
+        return profile;
+    }
+
+    /**
+     * Submit remaining KYC data (ID details and Bank Details)
+     */
+    static async submitKyc(userId: string, data: {
+        idType: string;
+        idNumber: string;
+        bankName?: string;
+        bankAccountNo?: string;
+        bankAccountName?: string;
+    }) {
+        const profile = await this.getProfile(userId);
 
         return prisma.profile.update({
             where: { id: profile.id },
             data: {
                 idType: data.idType,
                 idNumber: data.idNumber,
-                idImageUrl: data.idImageUrl,
                 bankName: data.bankName,
                 bankAccountNo: data.bankAccountNo,
                 bankAccountName: data.bankAccountName,
@@ -54,6 +91,8 @@ export class KycService {
                 idType: true,
                 idNumber: true,
                 idImageUrl: true,
+                idBackImageUrl: true,
+                selfieImageUrl: true,
                 bankName: true,
                 bankAccountNo: true,
                 bankAccountName: true,
