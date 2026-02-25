@@ -7,13 +7,17 @@
             "ES2022"
         ],
         "outDir": "./dist",
-        "rootDir": "./src",
+        "rootDir": ".",
         "strict": true,
         "isolatedModules": true,
         "esModuleInterop": true,
         "skipLibCheck": true,
         "forceConsistentCasingInFileNames": true,
         "resolveJsonModule": true,
+        "types": [
+            "node",
+            "jest"
+        ],
         "declaration": true,
         "declarationMap": true,
         "sourceMap": true,
@@ -37,11 +41,12 @@
         }
     },
     "include": [
-        "src/**/*"
+        "src/**/*",
+        "tests/**/*",
+        "test-api.ts"
     ],
     "exclude": [
         "node_modules",
-        "dist",
-        "tests"
+        "dist"
     ]
 }

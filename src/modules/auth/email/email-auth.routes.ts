@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { auth } from '../auth.js';
-import { prisma } from '../../../infra/prisma.client.js';
+
 import { WalletService } from '../../wallet/wallet.service.js';
 import { CONSTANTS } from '../../../config/constants.js';
 

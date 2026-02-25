@@ -1,7 +1,11 @@
+import { jest } from '@jest/globals';
+jest.mock('better-auth/node');
+
 import request from 'supertest';
-import app from '../src/api/server';
-import { prisma } from '../src/infra/prisma.client';
-import { redis } from '../src/infra/redis.client';
+import app from '../src/api/server.js';
+import { prisma } from '../src/infra/prisma.client.js';
+import { redis } from '../src/infra/redis.client.js';
+import { auth } from '../src/modules/auth/auth.js';
 
 describe('Phase 2: Core Savings Logic', () => {
     let userToken: string;
@@ -26,15 +30,16 @@ describe('Phase 2: Core Savings Logic', () => {
         // Given better-auth internal complexity, I will mock the middleware behavior via a spy 
         // OR easier: assume the routes use `requireAuth` which checks `req.header`... 
 
-        // Actually, let's just create a session!
-        const session = await prisma.session.create({
+        // Create a test session directly in DB
+        const token = `test-token-${Date.now()}`;
+        await prisma.session.create({
             data: {
                 userId: user.id,
-                token: `test-token-${Date.now()}`,
+                token: token,
                 expiresAt: new Date(Date.now() + 3600000),
             },
         });
-        userToken = session.token;
+        userToken = token;
     });
 
     afterAll(async () => {
@@ -52,7 +57,7 @@ describe('Phase 2: Core Savings Logic', () => {
     it('should create a wallet automatically or on first get', async () => {
         const res = await request(app)
             .get('/api/wallet')
-            .set('Cookie', `better-auth.session_token=${userToken}`); // Assuming cookie based auth
+            .set('Authorization', `Bearer ${userToken}`); // Assuming cookie based auth
         // If header based: .set('Authorization', `Bearer ${userToken}`)
 
         // If auth fails here, we might need to adjust how we pass tokens depending on better-auth config.
@@ -67,7 +72,7 @@ describe('Phase 2: Core Savings Logic', () => {
     it('should deposit money into wallet', async () => {
         const res = await request(app)
             .post('/api/wallet/deposit')
-            .set('Cookie', `better-auth.session_token=${userToken}`)
+            .set('Authorization', `Bearer ${userToken}`)
             .send({ amount: 100 });
 
         expect(res.status).toBe(200);
@@ -82,7 +87,7 @@ describe('Phase 2: Core Savings Logic', () => {
     it('should create a savings goal', async () => {
         const res = await request(app)
             .post('/api/goals')
-            .set('Cookie', `better-auth.session_token=${userToken}`)
+            .set('Authorization', `Bearer ${userToken}`)
             .send({
                 name: 'New Laptop',
                 targetAmount: 2000,
@@ -99,7 +104,7 @@ describe('Phase 2: Core Savings Logic', () => {
     it('should list user goals', async () => {
         const res = await request(app)
             .get('/api/goals')
-            .set('Cookie', `better-auth.session_token=${userToken}`);
+            .set('Authorization', `Bearer ${userToken}`);
 
         expect(res.status).toBe(200);
         expect(res.body.data.length).toBeGreaterThan(0);
@@ -109,7 +114,7 @@ describe('Phase 2: Core Savings Logic', () => {
     it('should fail to fund goal if insufficient funds', async () => {
         const res = await request(app)
             .post(`/api/goals/${goalId}/fund`)
-            .set('Cookie', `better-auth.session_token=${userToken}`)
+            .set('Authorization', `Bearer ${userToken}`)
             .send({ amount: 500 }); // Wallet has 100, needed 500
 
         expect(res.status).toBe(400);
@@ -119,7 +124,7 @@ describe('Phase 2: Core Savings Logic', () => {
     it('should fund goal successfully', async () => {
         const res = await request(app)
             .post(`/api/goals/${goalId}/fund`)
-            .set('Cookie', `better-auth.session_token=${userToken}`)
+            .set('Authorization', `Bearer ${userToken}`)
             .send({ amount: 50 }); // Wallet has 100
 
         expect(res.status).toBe(200);
@@ -132,7 +137,7 @@ describe('Phase 2: Core Savings Logic', () => {
         // Checking via wallet endpoint to be sure
         const walletRes = await request(app)
             .get('/api/wallet')
-            .set('Cookie', `better-auth.session_token=${userToken}`);
+            .set('Authorization', `Bearer ${userToken}`);
 
         expect(walletRes.body.data.balance).toBe("50");
     });

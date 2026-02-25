@@ -1,0 +1,246 @@
+﻿
+> savegoal-backend@1.0.0 test
+> node --experimental-vm-modules node_modules/jest/bin/jest.js tests/phase2.test.ts
+
+node.exe : (node:25420) 
+ExperimentalWarning: VM Modules is 
+an experimental feature and might 
+change at any time
+At line:1 char:1
++ & "C:\Program 
+Files\nodejs/node.exe" "C:\Program 
+Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpe 
+   cified: ((node:25420) Ex...nge a  
+  t any time:String) [], RemoteExc   
+ eption
+    + FullyQualifiedErrorId : Native 
+   CommandError
+ 
+(Use `node --trace-warnings ...` to 
+show where the warning was created)
+[08:14:59 UTC] [32mINFO[39m: [36mÔ£à Redis connected[39m
+FAIL tests/phase2.test.ts
+  Phase 2: Core Savings Logic
+    ├ù should create a wallet 
+automatically or on first get (26 ms)
+    ├ù should deposit money into 
+wallet (18 ms)
+    ├ù should create a savings goal 
+(5 ms)
+    ├ù should list user goals (5 ms)
+    ├ù should fail to fund goal if 
+insufficient funds (5 ms)
+    ├ù should fund goal successfully 
+(4 ms)
+
+  ÔùÅ Phase 2: Core Savings Logic 
+ÔÇ║ should create a wallet 
+automatically or on first get
+
+    expect(received).toBe(expected) 
+// Object.is equality
+
+    Expected: 200
+    Received: 401
+
+    [0m [90m 59 |[39m         
+[90m// Assuming cookie for now 
+based on `auth.ts`.[39m
+     [90m 60 |[39m
+    [31m[1m>[22m[39m[90m 61 
+|[39m         expect(res[33m.[39ms
+tatus)[33m.[39mtoBe([35m200[39m)
+[33m;[39m
+     [90m    |[39m                 
+           [31m[1m^[22m[39m
+     [90m 62 |[39m         expect(r
+es[33m.[39mbody[33m.[39msuccess)
+[33m.[39mtoBe([36mtrue[39m)[33m;
+[39m
+     [90m 63 |[39m         expect(r
+es[33m.[39mbody[33m.[39mdata[33m
+.[39mcurrency)[33m.[39mtoBe([32m'
+GHS'[39m)[33m;[39m
+     [90m 64 |[39m         expect(r
+es[33m.[39mbody[33m.[39mdata[33m
+.[39mbalance)[33m.[39mtoBe([32m"0
+"[39m)[33m;[39m [90m// Decimal 
+returns as string[39m[0m
+
+      at Object.<anonymous> 
+(tests/phase2.test.ts:61:28)
+
+  ÔùÅ Phase 2: Core Savings Logic 
+ÔÇ║ should deposit money into wallet
+
+    expect(received).toBe(expected) 
+// Object.is equality
+
+    Expected: 200
+    Received: 401
+
+    [0m [90m 71 |[39m             
+[33m.[39msend({ amount[33m:[39m 
+[35m100[39m })[33m;[39m
+     [90m 72 |[39m
+    [31m[1m>[22m[39m[90m 73 
+|[39m         expect(res[33m.[39ms
+tatus)[33m.[39mtoBe([35m200[39m)
+[33m;[39m
+     [90m    |[39m                 
+           [31m[1m^[22m[39m
+     [90m 74 |[39m         expect(r
+es[33m.[39mbody[33m.[39msuccess)
+[33m.[39mtoBe([36mtrue[39m)[33m;
+[39m
+     [90m 75 |[39m         expect(r
+es[33m.[39mbody[33m.[39mdata[33m
+.[39mwallet[33m.[39mbalance)[33m.
+[39mtoBe([32m"100"[39m)[33m;[39m
+     [90m 76 |[39m     
+})[33m;[39m[0m
+
+      at Object.<anonymous> 
+(tests/phase2.test.ts:73:28)
+
+  ÔùÅ Phase 2: Core Savings Logic 
+ÔÇ║ should create a savings goal
+
+    expect(received).toBe(expected) 
+// Object.is equality
+
+    Expected: 201
+    Received: 401
+
+    [0m [90m 90 |[39m             
+})[33m;[39m
+     [90m 91 |[39m
+    [31m[1m>[22m[39m[90m 92 
+|[39m         expect(res[33m.[39ms
+tatus)[33m.[39mtoBe([35m201[39m)
+[33m;[39m
+     [90m    |[39m                 
+           [31m[1m^[22m[39m
+     [90m 93 |[39m         expect(r
+es[33m.[39mbody[33m.[39msuccess)
+[33m.[39mtoBe([36mtrue[39m)[33m;
+[39m
+     [90m 94 |[39m         expect(r
+es[33m.[39mbody[33m.[39mdata[33m
+.[39mname)[33m.[39mtoBe([32m'New 
+Laptop'[39m)[33m;[39m
+     [90m 95 |[39m         expect(r
+es[33m.[39mbody[33m.[39mdata[33m
+.[39mstatus)[33m.[39mtoBe([32m'AC
+TIVE'[39m)[33m;[39m[0m
+
+      at Object.<anonymous> 
+(tests/phase2.test.ts:92:28)
+
+  ÔùÅ Phase 2: Core Savings Logic 
+ÔÇ║ should list user goals
+
+    expect(received).toBe(expected) 
+// Object.is equality
+
+    Expected: 200
+    Received: 401
+
+    [0m [90m 102 |[39m            
+ [33m.[39m[36mset[39m([32m'Cooki
+e'[39m[33m,[39m [32m`better-auth.
+session_token=${userToken}`[39m)[33
+m;[39m
+     [90m 103 |[39m
+    [31m[1m>[22m[39m[90m 104 
+|[39m         expect(res[33m.[39ms
+tatus)[33m.[39mtoBe([35m200[39m)
+[33m;[39m
+     [90m     |[39m                
+            [31m[1m^[22m[39m
+     [90m 105 |[39m         expect(
+res[33m.[39mbody[33m.[39mdata[33
+m.[39mlength)[33m.[39mtoBeGreaterT
+han([35m0[39m)[33m;[39m
+     [90m 106 |[39m         expect(
+res[33m.[39mbody[33m.[39mdata[[3
+5m0[39m][33m.[39mid)[33m.[39mtoB
+e(goalId)[33m;[39m
+     [90m 107 |[39m     
+})[33m;[39m[0m
+
+      at Object.<anonymous> 
+(tests/phase2.test.ts:104:28)
+
+  ÔùÅ Phase 2: Core Savings Logic 
+ÔÇ║ should fail to fund goal if 
+insufficient funds
+
+    expect(received).toBe(expected) 
+// Object.is equality
+
+    Expected: 400
+    Received: 401
+
+    [0m [90m 113 |[39m            
+ [33m.[39msend({ amount[33m:[39m 
+[35m500[39m })[33m;[39m [90m// 
+Wallet has 100, needed 500[39m
+     [90m 114 |[39m
+    [31m[1m>[22m[39m[90m 115 
+|[39m         expect(res[33m.[39ms
+tatus)[33m.[39mtoBe([35m400[39m)
+[33m;[39m
+     [90m     |[39m                
+            [31m[1m^[22m[39m
+     [90m 116 |[39m         expect(
+res[33m.[39mbody[33m.[39merror[3
+3m.[39mcode)[33m.[39mtoBe([32m'VA
+LIDATION_ERROR'[39m)[33m;[39m
+     [90m 117 |[39m     
+})[33m;[39m
+     [90m 118 |[39m[0m
+
+      at Object.<anonymous> 
+(tests/phase2.test.ts:115:28)
+
+  ÔùÅ Phase 2: Core Savings Logic 
+ÔÇ║ should fund goal successfully
+
+    expect(received).toBe(expected) 
+// Object.is equality
+
+    Expected: 200
+    Received: 401
+
+    [0m [90m 123 |[39m            
+ [33m.[39msend({ amount[33m:[39m 
+[35m50[39m })[33m;[39m [90m// 
+Wallet has 100[39m
+     [90m 124 |[39m
+    [31m[1m>[22m[39m[90m 125 
+|[39m         expect(res[33m.[39ms
+tatus)[33m.[39mtoBe([35m200[39m)
+[33m;[39m
+     [90m     |[39m                
+            [31m[1m^[22m[39m
+     [90m 126 |[39m         expect(
+res[33m.[39mbody[33m.[39msuccess)
+[33m.[39mtoBe([36mtrue[39m)[33m;
+[39m
+     [90m 127 |[39m
+     [90m 128 |[39m         
+[90m// Check goal balance[39m[0m
+
+      at Object.<anonymous> 
+(tests/phase2.test.ts:125:28)
+
+Test Suites: 1 failed, 1 total
+Tests:       6 failed, 6 total
+Snapshots:   0 total
+Time:        3.228 s, estimated 8 s
+Ran all test suites matching 
+/tests\\phase2.test.ts/i.

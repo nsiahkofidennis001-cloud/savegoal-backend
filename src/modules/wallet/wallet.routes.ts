@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { WalletService } from './wallet.service.js';
 import { success, error } from '../../shared/utils/response.util.js';
 import { requireAuth } from '../auth/auth.middleware.js';
+import { logger } from '../../infra/logger.js';
 
 const router = Router();
 
@@ -17,9 +18,10 @@ router.get('/', async (req: Request, res: Response) => {
         const userId = req.user!.id; // Injected by requireAuth/better-auth
         const wallet = await WalletService.getWallet(userId);
         return success(res, wallet);
-    } catch (err: any) {
-        console.error('Get wallet error:', err);
-        return error(res, 'INTERNAL_ERROR', err.message || 'Failed to get wallet');
+    } catch (err: unknown) {
+        const errObj = err as Error;
+        logger.error(errObj, 'Get wallet error:');
+        return error(res, 'INTERNAL_ERROR', errObj.message || 'Failed to get wallet');
     }
 });
 
@@ -38,11 +40,12 @@ router.post('/deposit', async (req: Request, res: Response) => {
 
         const result = await WalletService.deposit(userId, amount);
         return success(res, result);
-    } catch (err: any) {
-        console.error('Deposit error:', err);
-        const code = err.code || 'INTERNAL_ERROR';
-        const statusCode = err.statusCode || 500;
-        return error(res, code, err.message, statusCode);
+    } catch (err: unknown) {
+        const errObj = err as any;
+        logger.error(errObj, 'Deposit error:');
+        const code = errObj.code || 'INTERNAL_ERROR';
+        const statusCode = errObj.statusCode || 500;
+        return error(res, code, errObj.message, statusCode);
     }
 });
 

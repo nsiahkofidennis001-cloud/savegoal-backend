@@ -1,5 +1,6 @@
 import { env } from '../../../config/env.config.js';
 import { ApiException } from '../../../shared/exceptions/api.exception.js';
+import { logger } from '../../../infra/logger.js';
 
 export interface PaystackInitializeResponse {
     status: boolean;
@@ -27,7 +28,7 @@ export interface PaystackVerifyResponse {
         customer: {
             email: string;
         };
-        metadata: any;
+        metadata: Record<string, unknown>;
     };
 }
 
@@ -54,10 +55,10 @@ export class PaystackProvider {
         amount: number; // In GHS (will be converted to pesewas)
         reference?: string;
         callback_url?: string;
-        metadata?: any;
+        metadata?: Record<string, unknown>;
     }): Promise<PaystackInitializeResponse> {
         if (this.isMock()) {
-            console.info('🛠️ Using Mock Paystack Initialization');
+            logger.info('🛠️ Using Mock Paystack Initialization');
             return {
                 status: true,
                 message: 'Mock initialization successful',
@@ -87,8 +88,9 @@ export class PaystackProvider {
             }
 
             return result;
-        } catch (error: any) {
-            console.error('Paystack Initialize Error:', error.message);
+        } catch (err: unknown) {
+            const error = err as Error;
+            logger.error(error, 'Paystack Initialize Error:');
             throw new ApiException(
                 500,
                 'PAYMENT_ERROR',
@@ -102,7 +104,7 @@ export class PaystackProvider {
      */
     static async verifyTransaction(reference: string): Promise<PaystackVerifyResponse> {
         if (this.isMock() || reference.startsWith('MOCK-')) {
-            console.info('🛠️ Using Mock Paystack Verification');
+            logger.info('🛠️ Using Mock Paystack Verification');
             return {
                 status: true,
                 message: 'Mock verification successful',
@@ -135,8 +137,9 @@ export class PaystackProvider {
             }
 
             return result;
-        } catch (error: any) {
-            console.error('Paystack Verify Error:', error.message);
+        } catch (err: unknown) {
+            const error = err as Error;
+            logger.error(error, 'Paystack Verify Error:');
             throw new ApiException(
                 500,
                 'PAYMENT_ERROR',

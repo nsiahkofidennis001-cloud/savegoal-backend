@@ -1,0 +1,172 @@
+{
+  "timestamp": "2026-02-25T07:02:01.739Z",
+  "summary": {
+    "passed": 32,
+    "failed": 0,
+    "skipped": 0,
+    "total": 32,
+    "passRate": "100.0%"
+  },
+  "results": [
+    {
+      "name": "GET / — root returns 200",
+      "status": "PASS",
+      "statusCode": 200
+    },
+    {
+      "name": "GET / — body has success=true",
+      "status": "PASS",
+      "statusCode": 200
+    },
+    {
+      "name": "GET /health — returns 200",
+      "status": "PASS",
+      "statusCode": 200
+    },
+    {
+      "name": "GET /health — status ok",
+      "status": "PASS",
+      "statusCode": 200
+    },
+    {
+      "name": "GET /health/db — database connected",
+      "status": "PASS",
+      "statusCode": 200
+    },
+    {
+      "name": "GET /health/redis — redis connected",
+      "status": "PASS",
+      "statusCode": 200
+    },
+    {
+      "name": "POST /api/auth/sign-in/email — signin",
+      "status": "PASS",
+      "statusCode": 200
+    },
+    {
+      "name": "GET /api/auth/get-session — session valid",
+      "status": "PASS",
+      "statusCode": 200
+    },
+    {
+      "name": "GET /api/wallet — unauthenticated returns 401",
+      "status": "PASS",
+      "statusCode": 401
+    },
+    {
+      "name": "GET /api/goals — unauthenticated returns 401",
+      "status": "PASS",
+      "statusCode": 401
+    },
+    {
+      "name": "GET /api/merchants/profile — unauthenticated returns 401",
+      "status": "PASS",
+      "statusCode": 401
+    },
+    {
+      "name": "GET /api/wallet — get wallet",
+      "status": "PASS",
+      "statusCode": 200
+    },
+    {
+      "name": "Wallet has GHS currency",
+      "status": "PASS",
+      "statusCode": 200
+    },
+    {
+      "name": "POST /api/wallet/deposit — deposit 500",
+      "status": "PASS",
+      "statusCode": 200
+    },
+    {
+      "name": "Wallet balance updated after deposit",
+      "status": "PASS",
+      "statusCode": 200
+    },
+    {
+      "name": "GET /api/goals/stats — dashboard stats",
+      "status": "PASS",
+      "statusCode": 200
+    },
+    {
+      "name": "POST /api/goals — create goal",
+      "status": "PASS",
+      "statusCode": 201
+    },
+    {
+      "name": "GET /api/goals — list goals",
+      "status": "PASS",
+      "statusCode": 200
+    },
+    {
+      "name": "Goals list has items",
+      "status": "PASS",
+      "statusCode": 200
+    },
+    {
+      "name": "GET /api/goals/:id — get goal",
+      "status": "PASS",
+      "statusCode": 200
+    },
+    {
+      "name": "POST /api/goals/:id/fund — fund goal 100",
+      "status": "PASS",
+      "statusCode": 200
+    },
+    {
+      "name": "Fund goal — insufficient funds rejected",
+      "status": "PASS",
+      "statusCode": 400
+    },
+    {
+      "name": "GET /api/products — list products",
+      "status": "PASS",
+      "statusCode": 200
+    },
+    {
+      "name": "GET /api/products/categories — list categories",
+      "status": "PASS",
+      "statusCode": 200
+    },
+    {
+      "name": "GET /api/merchants/profile — responds (200 or 404/500)",
+      "status": "PASS",
+      "statusCode": 404
+    },
+    {
+      "name": "GET /api/merchants/stats — responds",
+      "status": "PASS",
+      "statusCode": 500
+    },
+    {
+      "name": "GET /api/payments — responds",
+      "status": "PASS",
+      "statusCode": 404
+    },
+    {
+      "name": "GET /api/notifications — responds",
+      "status": "PASS",
+      "statusCode": 200
+    },
+    {
+      "name": "GET /api/kyc/status — responds",
+      "status": "PASS",
+      "statusCode": 404
+    },
+    {
+      "name": "GET /api/admin/users — non-admin rejected (403)",
+      "status": "PASS",
+      "statusCode": 403
+    },
+    {
+      "name": "GET /api/nonexistent — returns 404",
+      "status": "PASS",
+      "statusCode": 404
+    },
+    {
+      "name": "GET /api-docs.json — swagger spec available",
+      "status": "PASS",
+      "statusCode": 200
+    }
+  ]
+}

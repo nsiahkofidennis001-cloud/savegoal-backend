@@ -8,6 +8,7 @@ import { swaggerSpec } from '../config/swagger.config.js';
 import { standardLimiter, authLimiter } from './middlewares/rateLimit.middleware.js';
 import { ApiException } from '../shared/exceptions/api.exception.js';
 import { error } from '../shared/utils/response.util.js';
+import { logger } from '../infra/logger.js';
 
 // Routes
 import healthRoutes from './routes/v1/health.routes.js';
@@ -44,7 +45,7 @@ app.use(
     cors({
         origin: env.NODE_ENV === 'production'
             ? ['https://savegoal.com', 'https://save-goal-frontend.vercel.app']
-            : '*',
+            : ['http://localhost:3000', 'http://127.0.0.1:3000'],
         credentials: true,
     })
 );
@@ -133,7 +134,7 @@ app.use((_req: Request, res: Response) => {
 
 // Global error handler
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
-    console.error('Unhandled error:', err);
+    logger.error(err, 'Unhandled error:');
 
     if (err instanceof ApiException) {
         return error(res, err.code, err.message, err.statusCode, err.details);
@@ -153,37 +154,37 @@ const PORT = parseInt(env.PORT, 10);
 
 async function startServer() {
     try {
-        console.info('🔍 Running pre-flight checks...');
+        logger.info('🔍 Running pre-flight checks...');
 
         // Check Database
         const { prisma } = await import('../infra/prisma.client.js');
         try {
             await prisma.$queryRaw`SELECT 1`;
-            console.info('✅ Database connection established');
+            logger.info('✅ Database connection established');
         } catch (dbErr) {
             if (env.NODE_ENV === 'production') {
-                console.error('❌ Database connection failed:', dbErr);
+                logger.error(dbErr, '❌ Database connection failed:');
                 throw dbErr;
             } else {
-                console.warn('⚠️ Database unreachable (local network cannot reach Supabase).');
-                console.warn('   Routes requiring DB will fail, but server will start for local dev.');
-                console.warn('   Use a VPN or deploy to Render to test DB-dependent routes.');
+                logger.warn('⚠️ Database unreachable (local network cannot reach Supabase).');
+                logger.warn('   Routes requiring DB will fail, but server will start for local dev.');
+                logger.warn('   Use a VPN or deploy to Render to test DB-dependent routes.');
             }
         }
 
         // Check Redis
         const { redis } = await import('../infra/redis.client.js');
         await redis.ping();
-        console.info('✅ Redis connection established');
+        logger.info('✅ Redis connection established');
 
         app.listen(PORT, () => {
-            console.info(`🚀 SaveGoal API running on port ${PORT}`);
-            console.info(`📍 Environment: ${env.NODE_ENV}`);
-            console.info(`🔗 BetterAuth URL: ${env.BETTER_AUTH_URL}`);
-            console.info(`🔗 Health check: http://localhost:${PORT}/health`);
+            logger.info(`🚀 SaveGoal API running on port ${PORT}`);
+            logger.info(`📍 Environment: ${env.NODE_ENV}`);
+            logger.info(`🔗 BetterAuth URL: ${env.BETTER_AUTH_URL}`);
+            logger.info(`🔗 Health check: http://localhost:${PORT}/health`);
         });
     } catch (err) {
-        console.error('❌ Failed to start server:', err);
+        logger.error(err, '❌ Failed to start server:');
         process.exit(1);
     }
 }
