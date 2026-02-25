@@ -8,6 +8,21 @@ const router = Router();
 router.use(requireAuth);
 
 /**
+ * GET /api/goals/stats
+ * Get consumer dashboard statistics
+ */
+router.get('/stats', async (req: Request, res: Response) => {
+    try {
+        const userId = req.user!.id;
+        const stats = await GoalsService.getDashboardStats(userId);
+        return success(res, stats);
+    } catch (err: unknown) {
+        const errObj = err as Error;
+        return error(res, 'INTERNAL_ERROR', errObj.message);
+    }
+});
+
+/**
  * GET /api/goals
  * List all goals
  */
@@ -16,8 +31,9 @@ router.get('/', async (req: Request, res: Response) => {
         const userId = req.user!.id;
         const goals = await GoalsService.getUserGoals(userId);
         return success(res, goals);
-    } catch (err: any) {
-        return error(res, 'INTERNAL_ERROR', err.message);
+    } catch (err: unknown) {
+        const errObj = err as Error;
+        return error(res, 'INTERNAL_ERROR', errObj.message);
     }
 });
 
@@ -45,8 +61,9 @@ router.post('/', async (req: Request, res: Response) => {
             savingsDay
         });
         return success(res, goal, undefined, 201);
-    } catch (err: any) {
-        return error(res, err.code || 'INTERNAL_ERROR', err.message, err.statusCode || 500);
+    } catch (err: unknown) {
+        const errObj = err as any;
+        return error(res, errObj.code || 'INTERNAL_ERROR', errObj.message, errObj.statusCode || 500);
     }
 });
 
@@ -59,8 +76,9 @@ router.patch('/:id/recurring', async (req: Request, res: Response) => {
         const userId = req.user!.id;
         const result = await GoalsService.updateRecurringSettings(userId, req.params.id, req.body);
         return success(res, result);
-    } catch (err: any) {
-        return error(res, err.code || 'INTERNAL_ERROR', err.message, err.statusCode || 500);
+    } catch (err: unknown) {
+        const errObj = err as any;
+        return error(res, errObj.code || 'INTERNAL_ERROR', errObj.message, errObj.statusCode || 500);
     }
 });
 
@@ -73,8 +91,9 @@ router.get('/:id', async (req: Request, res: Response) => {
         const userId = req.user!.id;
         const goal = await GoalsService.getGoal(userId, req.params.id);
         return success(res, goal);
-    } catch (err: any) {
-        return error(res, err.code || 'INTERNAL_ERROR', err.message, err.statusCode || 500);
+    } catch (err: unknown) {
+        const errObj = err as any;
+        return error(res, errObj.code || 'INTERNAL_ERROR', errObj.message, errObj.statusCode || 500);
     }
 });
 
@@ -93,8 +112,9 @@ router.post('/:id/fund', async (req: Request, res: Response) => {
 
         const result = await GoalsService.fundGoal(userId, req.params.id, amount);
         return success(res, result);
-    } catch (err: any) {
-        return error(res, err.code || 'INTERNAL_ERROR', err.message, err.statusCode || 500);
+    } catch (err: unknown) {
+        const errObj = err as any;
+        return error(res, errObj.code || 'INTERNAL_ERROR', errObj.message, errObj.statusCode || 500);
     }
 });
 
@@ -119,8 +139,9 @@ router.post('/:id/redeem', async (req: Request, res: Response) => {
         const userId = req.user!.id;
         const result = await GoalsService.redeemGoal(userId, req.params.id);
         return success(res, result);
-    } catch (err: any) {
-        return error(res, err.code || 'INTERNAL_ERROR', err.message, err.statusCode || 500);
+    } catch (err: unknown) {
+        const errObj = err as any;
+        return error(res, errObj.code || 'INTERNAL_ERROR', errObj.message, errObj.statusCode || 500);
     }
 });
 

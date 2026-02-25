@@ -20,10 +20,11 @@ router.post('/request', async (req: Request, res: Response) => {
         }
         const result = await PayoutService.requestMerchantPayout(req.user!.id, amount);
         return success(res, result, undefined, 201);
-    } catch (err: any) {
-        const code = err.code || 'INTERNAL_ERROR';
-        const statusCode = err.statusCode || 500;
-        return error(res, code, err.message, statusCode);
+    } catch (err: unknown) {
+        const errObj = err as any;
+        const code = errObj.code || 'INTERNAL_ERROR';
+        const statusCode = errObj.statusCode || 500;
+        return error(res, code, errObj.message, statusCode);
     }
 });
 

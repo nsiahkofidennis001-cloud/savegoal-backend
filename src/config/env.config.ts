@@ -22,6 +22,15 @@ const envSchema = z.object({
     TWILIO_PHONE_NUMBER: z.string().optional(),
     PAYSTACK_SECRET_KEY: z.string().optional(),
     TEST_PHONE_NUMBER: z.string().optional(),
+
+    // SendGrid
+    SENDGRID_API_KEY: z.string().optional(),
+    EMAIL_FROM: z.string().default('SaveGoal <noreply@savegoal.com>'),
+
+    // Supabase
+    SUPABASE_URL: z.string().url().optional(),
+    SUPABASE_ANON_KEY: z.string().optional(),
+    SUPABASE_STORAGE_BUCKET: z.string().default('savegoal-assets'),
 });
 
 const parsed = envSchema.safeParse(process.env);

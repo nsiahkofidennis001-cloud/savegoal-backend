@@ -1,7 +1,7 @@
 import request from 'supertest';
-import app from '../src/api/server';
-import { prisma } from '../src/infra/prisma.client';
-import { redis } from '../src/infra/redis.client';
+import app from '../src/api/server.js';
+import { prisma } from '../src/infra/prisma.client.js';
+import { redis } from '../src/infra/redis.client.js';
 
 describe('Phase 2: Core Savings Logic', () => {
     let userToken: string;
