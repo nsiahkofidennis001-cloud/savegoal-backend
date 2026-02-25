@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import { ProductsService } from './products.service.js';
 import { requireAuth, requireRole } from '../auth/auth.middleware.js';
-import { ApiException } from '../../shared/exceptions/api.exception.js';
 
 const router = Router();
 
@@ -79,8 +78,9 @@ router.get('/:id', async (req, res, next) => {
  *       201:
  *         description: Product created
  */
-router.post('/', requireAuth, requireRole('MERCHANT', 'ADMIN'), async (req: any, res, next) => {
+router.post('/', requireAuth, requireRole('MERCHANT', 'ADMIN'), async (req, res, next) => {
     try {
+        if (!req.user) return res.status(401).json({ status: 'error', message: 'Unauthorized' });
         const product = await ProductsService.createProduct(req.user.id, req.body);
         res.status(201).json({ status: 'success', data: product });
     } catch (error) {
@@ -104,8 +104,9 @@ router.post('/', requireAuth, requireRole('MERCHANT', 'ADMIN'), async (req: any,
  *       200:
  *         description: Product updated
  */
-router.patch('/:id', requireAuth, async (req: any, res, next) => {
+router.patch('/:id', requireAuth, async (req, res, next) => {
     try {
+        if (!req.user) return res.status(401).json({ status: 'error', message: 'Unauthorized' });
         const product = await ProductsService.updateProduct(req.user.id, req.params.id, req.body);
         res.json({ status: 'success', data: product });
     } catch (error) {
@@ -129,8 +130,9 @@ router.patch('/:id', requireAuth, async (req: any, res, next) => {
  *       200:
  *         description: Product deleted
  */
-router.delete('/:id', requireAuth, async (req: any, res, next) => {
+router.delete('/:id', requireAuth, async (req, res, next) => {
     try {
+        if (!req.user) return res.status(401).json({ status: 'error', message: 'Unauthorized' });
         await ProductsService.deleteProduct(req.user.id, req.params.id);
         res.json({ status: 'success', message: 'Product deleted successfully' });
     } catch (error) {

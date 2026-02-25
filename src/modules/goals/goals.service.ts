@@ -1,7 +1,6 @@
 import { prisma } from '../../infra/prisma.client.js';
+import { GoalStatus, TransactionType } from '@prisma/client';
 import { ApiException } from '../../shared/exceptions/api.exception.js';
-import { Decimal } from '@prisma/client/runtime/library';
-import { WalletService } from '../wallet/wallet.service.js';
 import { NotificationService } from '../notifications/notification.service.js';
 
 export class GoalsService {
@@ -30,7 +29,7 @@ export class GoalsService {
                 throw new ApiException(404, 'NOT_FOUND', 'Product not found');
             }
 
-            finalTargetAmount = Number(product.price);
+            finalTargetAmount = Number(product.basePrice);
         }
 
         if (!finalTargetAmount || finalTargetAmount <= 0) {
@@ -45,7 +44,7 @@ export class GoalsService {
                 deadline: data.deadline ? new Date(data.deadline) : undefined,
                 description: data.description,
                 productId: data.productId,
-                status: 'ACTIVE',
+                status: GoalStatus.ACTIVE,
                 isRecurring: data.isRecurring || false,
                 monthlyAmount: data.monthlyAmount,
                 savingsDay: data.savingsDay,
@@ -61,7 +60,7 @@ export class GoalsService {
         monthlyAmount?: number;
         savingsDay?: number;
     }) {
-        const goal = await this.getGoal(userId, goalId);
+        await this.getGoal(userId, goalId);
 
         return prisma.goal.update({
             where: { id: goalId },
@@ -189,7 +188,7 @@ export class GoalsService {
             // 1. Get Goal & Verify
             const goal = await tx.goal.findUnique({
                 where: { id: goalId },
-                include: { product: { include: { merchant: true } } }
+                include: { product: { include: { store: { include: { merchant: true } } } } }
             });
 
             if (!goal || goal.userId !== userId) {
@@ -211,8 +210,9 @@ export class GoalsService {
             });
 
             // 3. Credit Merchant
+            const merchantProfileId = goal.product.store.merchantId;
             await tx.merchantProfile.update({
-                where: { id: goal.product.merchantProfileId },
+                where: { id: merchantProfileId },
                 data: {
                     balance: { increment: goal.currentAmount }
                 }
@@ -223,12 +223,13 @@ export class GoalsService {
                 data: {
                     walletId: (await tx.wallet.findUnique({ where: { userId } }))!.id,
                     goalId: goal.id,
-                    type: 'MERCHANT_PAYOUT' as any,
+                    merchantProfileId,
+                    type: TransactionType.MERCHANT_PAYOUT,
                     amount: goal.currentAmount,
                     status: 'COMPLETED',
                     reference: `PAYOUT-${goal.id}-${Date.now()}`,
                     metadata: {
-                        merchantId: goal.product.merchantProfileId,
+                        merchantId: merchantProfileId,
                         productId: goal.productId
                     }
                 }

@@ -1,5 +1,7 @@
 import rateLimit from 'express-rate-limit';
+import RedisStore from 'rate-limit-redis';
 import { CONSTANTS } from '../../config/constants.js';
+import { redis } from '../../infra/redis.client.js';
 
 /**
  * Standard rate limiter (100 req/min)
@@ -10,6 +12,10 @@ export const standardLimiter = rateLimit({
     max: CONSTANTS.RATE_LIMIT_MAX_REQUESTS,
     standardHeaders: true,
     legacyHeaders: false,
+    store: new RedisStore({
+        // @ts-expect-error - Typing mismatch between ioredis and rate-limit-redis
+        sendCommand: (...args: string[]) => redis.call(...args),
+    }),
     message: {
         success: false,
         error: {
@@ -27,6 +33,10 @@ export const authLimiter = rateLimit({
     max: 10,
     standardHeaders: true,
     legacyHeaders: false,
+    store: new RedisStore({
+        // @ts-expect-error - Typing mismatch between ioredis and rate-limit-redis
+        sendCommand: (...args: string[]) => redis.call(...args),
+    }),
     message: {
         success: false,
         error: {

@@ -13,10 +13,12 @@ router.use(requireAuth);
  */
 router.get('/status', async (req: Request, res: Response) => {
     try {
-        const status = await KycService.getKycStatus(req.user!.id);
+        if (!req.user) return res.status(401).json({ status: 'error', message: 'Unauthorized' });
+        const status = await KycService.getKycStatus(req.user.id);
         return success(res, status);
-    } catch (err: any) {
-        return error(res, 'INTERNAL_ERROR', err.message);
+    } catch (err) {
+        const message = err instanceof Error ? err.message : 'Unknown error';
+        return error(res, 'INTERNAL_ERROR', message);
     }
 });
 
@@ -43,11 +45,12 @@ router.post('/submit', async (req: Request, res: Response) => {
         });
 
         return success(res, result);
-    } catch (err: any) {
+    } catch (err) {
         console.error('KYC submission error:', err);
-        const code = err.code || 'INTERNAL_ERROR';
-        const statusCode = err.statusCode || 500;
-        return error(res, code, err.message, statusCode);
+        const message = err instanceof Error ? err.message : 'Unknown error';
+        const code = (err as any).code || 'INTERNAL_ERROR';
+        const statusCode = (err as any).statusCode || 500;
+        return error(res, code, message, statusCode);
     }
 });
 

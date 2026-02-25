@@ -13,7 +13,8 @@ const router = Router();
  */
 router.post('/deposit', requireAuth, async (req: Request, res: Response) => {
     try {
-        const userId = req.user!.id;
+        if (!req.user) return res.status(401).json({ status: 'error', message: 'Unauthorized' });
+        const userId = req.user.id;
         const { amount } = req.body;
 
         if (!amount || typeof amount !== 'number' || amount <= 0) {
@@ -22,11 +23,12 @@ router.post('/deposit', requireAuth, async (req: Request, res: Response) => {
 
         const result = await PaymentService.initializeDeposit(userId, amount);
         return success(res, result);
-    } catch (err: any) {
+    } catch (err) {
         console.error('Initialize deposit error:', err);
-        const code = err.code || 'INTERNAL_ERROR';
-        const statusCode = err.statusCode || 500;
-        return error(res, code, err.message, statusCode);
+        const message = err instanceof Error ? err.message : 'Unknown error';
+        const code = (err as any).code || 'INTERNAL_ERROR';
+        const statusCode = (err as any).statusCode || 500;
+        return error(res, code, message, statusCode);
     }
 });
 
@@ -36,7 +38,8 @@ router.post('/deposit', requireAuth, async (req: Request, res: Response) => {
  */
 router.post('/goal-funding', requireAuth, async (req: Request, res: Response) => {
     try {
-        const userId = req.user!.id;
+        if (!req.user) return res.status(401).json({ status: 'error', message: 'Unauthorized' });
+        const userId = req.user.id;
         const { goalId, amount } = req.body;
 
         if (!goalId) {
@@ -49,11 +52,12 @@ router.post('/goal-funding', requireAuth, async (req: Request, res: Response) =>
 
         const result = await PaymentService.initializeGoalFunding(userId, goalId, amount);
         return success(res, result);
-    } catch (err: any) {
+    } catch (err) {
         console.error('Initialize goal funding error:', err);
-        const code = err.code || 'INTERNAL_ERROR';
-        const statusCode = err.statusCode || 500;
-        return error(res, code, err.message, statusCode);
+        const message = err instanceof Error ? err.message : 'Unknown error';
+        const code = (err as any).code || 'INTERNAL_ERROR';
+        const statusCode = (err as any).statusCode || 500;
+        return error(res, code, message, statusCode);
     }
 });
 
@@ -66,11 +70,12 @@ router.get('/verify/:reference', requireAuth, async (req: Request, res: Response
         const { reference } = req.params;
         const result = await PaymentService.verifyPayment(reference);
         return success(res, result);
-    } catch (err: any) {
+    } catch (err) {
         console.error('Verify payment error:', err);
-        const code = err.code || 'INTERNAL_ERROR';
-        const statusCode = err.statusCode || 500;
-        return error(res, code, err.message, statusCode);
+        const message = err instanceof Error ? err.message : 'Unknown error';
+        const code = (err as any).code || 'INTERNAL_ERROR';
+        const statusCode = (err as any).statusCode || 500;
+        return error(res, code, message, statusCode);
     }
 });
 

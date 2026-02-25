@@ -14,9 +14,10 @@ router.post('/process-monthly', requireAuth, requireRole('ADMIN'), async (req: R
     try {
         const result = await AutomationService.processMonthlySavings();
         return success(res, result);
-    } catch (err: any) {
+    } catch (err) {
         console.error('Automation processing error:', err);
-        return error(res, 'INTERNAL_ERROR', err.message);
+        const message = err instanceof Error ? err.message : 'Unknown error';
+        return error(res, 'INTERNAL_ERROR', message);
     }
 });
 

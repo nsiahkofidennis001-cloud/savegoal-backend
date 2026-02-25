@@ -18,12 +18,14 @@ router.post('/request', async (req: Request, res: Response) => {
         if (!amount || typeof amount !== 'number' || amount <= 0) {
             return error(res, 'VALIDATION_ERROR', 'Valid positive amount is required', 400);
         }
-        const result = await PayoutService.requestMerchantPayout(req.user!.id, amount);
+        if (!req.user) return res.status(401).json({ status: 'error', message: 'Unauthorized' });
+        const result = await PayoutService.requestMerchantPayout(req.user.id, amount);
         return success(res, result, undefined, 201);
-    } catch (err: any) {
-        const code = err.code || 'INTERNAL_ERROR';
-        const statusCode = err.statusCode || 500;
-        return error(res, code, err.message, statusCode);
+    } catch (err) {
+        const message = err instanceof Error ? err.message : 'Unknown error';
+        const code = (err as any).code || 'INTERNAL_ERROR';
+        const statusCode = (err as any).statusCode || 500;
+        return error(res, code, message, statusCode);
     }
 });
 

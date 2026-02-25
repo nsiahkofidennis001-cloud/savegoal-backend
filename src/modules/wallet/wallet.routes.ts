@@ -2,6 +2,8 @@ import { Router, Request, Response } from 'express';
 import { WalletService } from './wallet.service.js';
 import { success, error } from '../../shared/utils/response.util.js';
 import { requireAuth } from '../auth/auth.middleware.js';
+import { validate } from '../../api/middlewares/validate.middleware.js';
+import { depositSchema } from './wallet.schema.js';
 
 const router = Router();
 
@@ -27,14 +29,10 @@ router.get('/', async (req: Request, res: Response) => {
  * POST /api/wallet/deposit
  * Mock deposit for testing
  */
-router.post('/deposit', async (req: Request, res: Response) => {
+router.post('/deposit', validate(depositSchema), async (req: Request, res: Response) => {
     try {
         const userId = req.user!.id;
         const { amount } = req.body;
-
-        if (!amount || typeof amount !== 'number') {
-            return error(res, 'VALIDATION_ERROR', 'Valid amount is required', 400);
-        }
 
         const result = await WalletService.deposit(userId, amount);
         return success(res, result);

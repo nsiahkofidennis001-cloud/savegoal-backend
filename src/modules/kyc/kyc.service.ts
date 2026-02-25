@@ -15,7 +15,7 @@ export class KycService {
         bankAccountNo?: string;
         bankAccountName?: string;
     }) {
-        const profile = await prisma.profile.findFirst({
+        const profile = await prisma.consumerProfile.findFirst({
             where: { userId }
         });
 
@@ -28,7 +28,7 @@ export class KycService {
             throw new ApiException(400, 'ALREADY_VERIFIED', 'Your account is already verified');
         }
 
-        return prisma.profile.update({
+        return prisma.consumerProfile.update({
             where: { id: profile.id },
             data: {
                 idType: data.idType,
@@ -48,7 +48,7 @@ export class KycService {
      * Get KYC status for a user
      */
     static async getKycStatus(userId: string) {
-        const profile = await prisma.profile.findFirst({
+        const profile = await prisma.consumerProfile.findFirst({
             where: { userId },
             select: {
                 kycStatus: true,

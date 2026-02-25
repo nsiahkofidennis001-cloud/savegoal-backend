@@ -1,8 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { auth } from '../auth.js';
-import { prisma } from '../../../infra/prisma.client.js';
 import { WalletService } from '../../wallet/wallet.service.js';
-import { CONSTANTS } from '../../../config/constants.js';
 
 const router = Router();
 
@@ -77,15 +75,15 @@ router.post('/signup', async (req: Request, res: Response) => {
                 },
             },
         });
-    } catch (error: any) {
+    } catch (error) {
         console.error('Email signup error:', error);
 
         // Handle better-auth errors (often throws APIError)
-        const message = error.body?.message || error.message || 'Failed to sign up';
-        const code = error.body?.code || 'INTERNAL_ERROR';
+        const message = (error as any).body?.message || (error as any).message || 'Failed to sign up';
+        const code = (error as any).body?.code || 'INTERNAL_ERROR';
 
         // Ensure status is a number (Express crashes on string statuses like 'UNPROCESSABLE_ENTITY')
-        let status = error.status;
+        let status = (error as any).status;
         if (status === 'UNPROCESSABLE_ENTITY') status = 422;
         if (typeof status !== 'number') status = 500;
 
@@ -151,14 +149,14 @@ router.post('/signin', async (req: Request, res: Response) => {
                 },
             },
         });
-    } catch (error: any) {
+    } catch (error) {
         console.error('Email signin error:', error);
 
         // Handle better-auth errors
-        const message = error.body?.message || error.message || 'Failed to sign in';
-        const code = error.body?.code || 'AUTH_ERROR';
+        const message = (error as any).body?.message || (error as any).message || 'Failed to sign in';
+        const code = (error as any).body?.code || 'AUTH_ERROR';
 
-        let status = error.status;
+        let status = (error as any).status;
         if (status === 'UNPROCESSABLE_ENTITY') status = 422;
         if (typeof status !== 'number') status = 401;
 
