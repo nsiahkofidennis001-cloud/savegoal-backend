@@ -152,24 +152,40 @@ router.post('/verify-otp', async (req: Request, res: Response) => {
         // Delete OTP after successful verification
         await redis.del(otpKey);
 
-        // Find or create user
-        let user = await prisma.user.findUnique({
-            where: { phone },
-        });
-
-        if (!user) {
-            // Create new user
-            user = await prisma.user.create({
-                data: {
-                    id: crypto.randomUUID(),
-                    phone,
-                    name: name || phone,
-                    email: `${phone.replace('+', '')}@phone.savegoal.com`,
-                    emailVerified: false,
-                    role: 'CONSUMER',
-                },
+        // Find or create user atomically with Profile and Wallet
+        const user = await prisma.$transaction(async (tx) => {
+            let existingUser = await tx.user.findUnique({
+                where: { phone },
             });
-        }
+
+            if (!existingUser) {
+                // Create User, Profile, and Wallet together
+                existingUser = await tx.user.create({
+                    data: {
+                        id: crypto.randomUUID(),
+                        phone,
+                        name: name || phone,
+                        email: `${phone.replace('+', '')}@phone.savegoal.com`,
+                        emailVerified: false,
+                        role: 'CONSUMER',
+                        profile: {
+                            create: {
+                                firstName: name ? name.split(' ')[0] : 'User',
+                                lastName: name && name.split(' ').length > 1 ? name.split(' ')[1] : 'SaveGoal',
+                                kycStatus: 'PENDING',
+                            }
+                        },
+                        wallet: {
+                            create: {
+                                currency: 'GHS',
+                                balance: 0.0,
+                            }
+                        }
+                    },
+                });
+            }
+            return existingUser;
+        });
 
         // Create session using better-auth internal adapter
         const session = await prisma.session.create({

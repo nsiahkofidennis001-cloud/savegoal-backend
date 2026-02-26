@@ -21,6 +21,7 @@ import merchantsRoutes from '../modules/merchants/merchants.routes.js';
 import productRoutes from '../modules/products/products.routes.js';
 import automationRoutes from '../modules/automation/automation.routes.js';
 import adminRoutes from '../modules/admin/admin.routes.js';
+import adminDashboardRoutes from '../modules/admin/dashboard/index.js';
 import kycRoutes from '../modules/kyc/kyc.routes.js';
 import payoutRoutes from '../modules/wallet/payout.routes.js';
 import notificationRoutes from '../modules/notifications/notification.routes.js';
@@ -84,6 +85,9 @@ app.get('/', (_req: Request, res: Response) => {
 
 // Health checks
 app.use('/health', healthRoutes);
+
+// Admin Dashboard (HTML UI)
+app.use('/admin', adminDashboardRoutes);
 
 // Phone OTP routes (Must be before generic auth catch-all)
 app.use('/api/auth/phone', phoneOtpRoutes);

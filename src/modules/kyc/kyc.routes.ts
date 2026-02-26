@@ -22,7 +22,7 @@ router.get('/status', async (req: Request, res: Response) => {
 
 /**
  * POST /api/kyc/submit
- * Submit KYC data (IDs and Bank Details)
+ * Submit KYC data (IDs, selfie, and Bank Details)
  */
 router.post('/submit', async (req: Request, res: Response) => {
     try {
@@ -45,6 +45,28 @@ router.post('/submit', async (req: Request, res: Response) => {
         return success(res, result);
     } catch (err: any) {
         console.error('KYC submission error:', err);
+        const code = err.code || 'INTERNAL_ERROR';
+        const statusCode = err.statusCode || 500;
+        return error(res, code, err.message, statusCode);
+    }
+});
+
+/**
+ * POST /api/kyc/selfie
+ * Submit or resubmit selfie image only
+ */
+router.post('/selfie', async (req: Request, res: Response) => {
+    try {
+        const { selfieImageUrl } = req.body;
+
+        if (!selfieImageUrl) {
+            return error(res, 'VALIDATION_ERROR', 'selfieImageUrl is required', 400);
+        }
+
+        const result = await KycService.submitSelfie(req.user!.id, selfieImageUrl);
+        return success(res, result);
+    } catch (err: any) {
+        console.error('Selfie submission error:', err);
         const code = err.code || 'INTERNAL_ERROR';
         const statusCode = err.statusCode || 500;
         return error(res, code, err.message, statusCode);

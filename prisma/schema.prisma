@@ -102,7 +102,10 @@ model Profile {
   idType      String?   // GHANA_CARD, PASSPORT, etc.
   idNumber    String?
   idImageUrl  String?
-  selfieImageUrl String?
+  selfieImageUrl  String?
+  selfieVerified  Boolean   @default(false)
+  selfieMatchScore Float?   // AI/manual confidence score (0.0 - 1.0)
+  selfieReviewNote String?  // Admin note on selfie review
 
   // Bank Details for Consumers
   bankName        String?

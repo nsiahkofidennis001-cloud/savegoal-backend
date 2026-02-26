@@ -635,7 +635,9 @@ const swaggerDefinition: swaggerJsdoc.OAS3Definition = {
                 },
                 responses: {
                     '200': { description: 'KYC submitted successfully' },
+                    '400': { description: 'Already verified' },
                     '401': { description: 'Unauthorized' },
+                    '404': { description: 'Profile not found' },
                 },
             },
         },
@@ -643,10 +645,40 @@ const swaggerDefinition: swaggerJsdoc.OAS3Definition = {
             get: {
                 tags: ['KYC'],
                 summary: 'Get current user KYC status',
+                description: 'Returns KYC status including selfie verification fields.',
                 security: [{ BearerAuth: [] }],
                 responses: {
-                    '200': { description: 'Current KYC status and bank details' },
+                    '200': { description: 'Current KYC status, selfie status, and bank details' },
                     '401': { description: 'Unauthorized' },
+                    '404': { description: 'Profile not found' },
+                },
+            },
+        },
+        '/api/kyc/selfie': {
+            post: {
+                tags: ['KYC'],
+                summary: 'Submit or resubmit selfie only',
+                description: 'Allows users to submit or re-submit their selfie without redoing the full KYC. Resets selfie verification status.',
+                security: [{ BearerAuth: [] }],
+                requestBody: {
+                    required: true,
+                    content: {
+                        'application/json': {
+                            schema: {
+                                type: 'object',
+                                required: ['selfieImageUrl'],
+                                properties: {
+                                    selfieImageUrl: { type: 'string', example: 'https://example.com/selfie.jpg', description: 'URL of the selfie image' },
+                                },
+                            },
+                        },
+                    },
+                },
+                responses: {
+                    '200': { description: 'Selfie submitted/updated' },
+                    '400': { description: 'Already verified or missing URL' },
+                    '401': { description: 'Unauthorized' },
+                    '404': { description: 'Profile not found' },
                 },
             },
         },
@@ -769,30 +801,198 @@ const swaggerDefinition: swaggerJsdoc.OAS3Definition = {
         },
 
         // ==================== ADMIN ====================
+        '/api/admin/dashboard': {
+            get: {
+                tags: ['Admin'],
+                summary: 'Get enhanced dashboard statistics',
+                description: 'Returns overview stats, KYC breakdown, revenue trends, user growth data.',
+                security: [{ BearerAuth: [] }],
+                responses: {
+                    '200': { description: 'Dashboard stats with overview, KYC counts, and trends' },
+                    '401': { description: 'Unauthorized' },
+                    '403': { description: 'Forbidden - Admin only' },
+                },
+            },
+        },
         '/api/admin/stats': {
             get: {
                 tags: ['Admin'],
-                summary: 'Get system-wide statistics',
+                summary: 'Get basic system statistics (legacy)',
                 security: [{ BearerAuth: [] }],
                 responses: {
                     '200': { description: 'Aggregated stats' },
                 },
             },
         },
+        '/api/admin/activity': {
+            get: {
+                tags: ['Admin'],
+                summary: 'Get recent system activity feed',
+                description: 'Returns recent user registrations, transactions, and KYC updates merged chronologically.',
+                security: [{ BearerAuth: [] }],
+                parameters: [
+                    { name: 'limit', in: 'query', schema: { type: 'integer', default: 30 }, description: 'Max items to return' },
+                ],
+                responses: {
+                    '200': { description: 'Activity feed array' },
+                    '403': { description: 'Forbidden - Admin only' },
+                },
+            },
+        },
+        '/api/admin/users': {
+            get: {
+                tags: ['Admin'],
+                summary: 'List all users (paginated)',
+                security: [{ BearerAuth: [] }],
+                parameters: [
+                    { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
+                    { name: 'limit', in: 'query', schema: { type: 'integer', default: 20 } },
+                ],
+                responses: {
+                    '200': { description: 'Paginated user list with profiles and wallets' },
+                    '403': { description: 'Forbidden - Admin only' },
+                },
+            },
+        },
+        '/api/admin/users/search': {
+            get: {
+                tags: ['Admin'],
+                summary: 'Search and filter users',
+                description: 'Search by name, email, or phone. Filter by role and KYC status.',
+                security: [{ BearerAuth: [] }],
+                parameters: [
+                    { name: 'q', in: 'query', schema: { type: 'string' }, description: 'Search query (name, email, phone)' },
+                    { name: 'role', in: 'query', schema: { type: 'string', enum: ['CONSUMER', 'MERCHANT', 'ADMIN'] } },
+                    { name: 'kycStatus', in: 'query', schema: { type: 'string', enum: ['PENDING', 'VERIFIED', 'FAILED', 'EXPIRED'] } },
+                    { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
+                    { name: 'limit', in: 'query', schema: { type: 'integer', default: 20 } },
+                ],
+                responses: {
+                    '200': { description: 'Paginated search results' },
+                    '403': { description: 'Forbidden - Admin only' },
+                },
+            },
+        },
+        '/api/admin/users/{id}': {
+            get: {
+                tags: ['Admin'],
+                summary: 'Get detailed user profile',
+                description: 'Returns full user data with profile, wallet, goals, transactions, sessions, and notifications.',
+                security: [{ BearerAuth: [] }],
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+                responses: {
+                    '200': { description: 'Full user detail' },
+                    '404': { description: 'User not found' },
+                },
+            },
+        },
+        '/api/admin/users/{id}/suspend': {
+            patch: {
+                tags: ['Admin'],
+                summary: 'Suspend or unsuspend a user',
+                description: 'Suspends user by clearing sessions and marking account. Cannot suspend admin users.',
+                security: [{ BearerAuth: [] }],
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+                requestBody: {
+                    required: true,
+                    content: {
+                        'application/json': {
+                            schema: {
+                                type: 'object',
+                                required: ['suspend'],
+                                properties: {
+                                    suspend: { type: 'boolean', description: 'true to suspend, false to unsuspend' },
+                                },
+                            },
+                        },
+                    },
+                },
+                responses: {
+                    '200': { description: 'User suspension toggled' },
+                    '403': { description: 'Cannot suspend admin users' },
+                    '404': { description: 'User not found' },
+                },
+            },
+        },
+        '/api/admin/merchants': {
+            get: {
+                tags: ['Admin'],
+                summary: 'List all merchant profiles',
+                description: 'Lists merchants with product/transaction counts.',
+                security: [{ BearerAuth: [] }],
+                responses: {
+                    '200': { description: 'Merchant list' },
+                },
+            },
+        },
+        '/api/admin/merchants/{id}/verify': {
+            patch: {
+                tags: ['Admin'],
+                summary: 'Verify or revoke merchant verification',
+                security: [{ BearerAuth: [] }],
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+                requestBody: {
+                    required: true,
+                    content: {
+                        'application/json': {
+                            schema: {
+                                type: 'object',
+                                required: ['isVerified'],
+                                properties: {
+                                    isVerified: { type: 'boolean' },
+                                },
+                            },
+                        },
+                    },
+                },
+                responses: {
+                    '200': { description: 'Merchant verification updated' },
+                    '404': { description: 'Merchant not found' },
+                },
+            },
+        },
         '/api/admin/kyc/pending': {
             get: {
                 tags: ['Admin'],
-                summary: 'List pending KYC applications',
+                summary: 'List pending KYC submissions',
                 security: [{ BearerAuth: [] }],
                 responses: {
                     '200': { description: 'List of users awaiting verification' },
                 },
             },
         },
+        '/api/admin/kyc/all': {
+            get: {
+                tags: ['Admin'],
+                summary: 'List all KYC submissions with optional status filter',
+                security: [{ BearerAuth: [] }],
+                parameters: [
+                    { name: 'status', in: 'query', schema: { type: 'string', enum: ['PENDING', 'VERIFIED', 'FAILED', 'EXPIRED'] } },
+                    { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
+                    { name: 'limit', in: 'query', schema: { type: 'integer', default: 20 } },
+                ],
+                responses: {
+                    '200': { description: 'Paginated KYC submissions' },
+                },
+            },
+        },
+        '/api/admin/kyc/{userId}/detail': {
+            get: {
+                tags: ['Admin'],
+                summary: 'Get detailed KYC submission with images',
+                description: 'Returns full KYC data including ID image URL and selfie URL for side-by-side review.',
+                security: [{ BearerAuth: [] }],
+                parameters: [{ name: 'userId', in: 'path', required: true, schema: { type: 'string' } }],
+                responses: {
+                    '200': { description: 'Full KYC detail with image URLs' },
+                    '404': { description: 'Profile not found' },
+                },
+            },
+        },
         '/api/admin/kyc/{userId}/verify': {
             patch: {
                 tags: ['Admin'],
-                summary: 'Approve or Decline KYC',
+                summary: 'Approve or decline KYC',
                 security: [{ BearerAuth: [] }],
                 parameters: [{ name: 'userId', in: 'path', required: true, schema: { type: 'string' } }],
                 requestBody: {
@@ -804,14 +1004,45 @@ const swaggerDefinition: swaggerJsdoc.OAS3Definition = {
                                 required: ['status'],
                                 properties: {
                                     status: { type: 'string', enum: ['VERIFIED', 'FAILED'] },
-                                    note: { type: 'string', description: 'Rejection reason' },
+                                    note: { type: 'string', description: 'Admin note / rejection reason' },
                                 },
                             },
                         },
                     },
                 },
                 responses: {
-                    '200': { description: 'KYC status updated' },
+                    '200': { description: 'KYC status updated, user notified' },
+                    '404': { description: 'Profile not found' },
+                },
+            },
+        },
+        '/api/admin/kyc/{userId}/selfie': {
+            patch: {
+                tags: ['Admin'],
+                summary: 'Approve or reject selfie specifically',
+                description: 'Reviews the selfie submission independently of the full KYC. Can set match score and note.',
+                security: [{ BearerAuth: [] }],
+                parameters: [{ name: 'userId', in: 'path', required: true, schema: { type: 'string' } }],
+                requestBody: {
+                    required: true,
+                    content: {
+                        'application/json': {
+                            schema: {
+                                type: 'object',
+                                required: ['verified'],
+                                properties: {
+                                    verified: { type: 'boolean', description: 'true to approve, false to reject' },
+                                    matchScore: { type: 'number', minimum: 0, maximum: 1, description: 'Confidence score (0.0 - 1.0)' },
+                                    note: { type: 'string', description: 'Admin review note' },
+                                },
+                            },
+                        },
+                    },
+                },
+                responses: {
+                    '200': { description: 'Selfie review saved, user notified' },
+                    '400': { description: 'No selfie submitted' },
+                    '404': { description: 'Profile not found' },
                 },
             },
         },
@@ -822,6 +1053,50 @@ const swaggerDefinition: swaggerJsdoc.OAS3Definition = {
                 security: [{ BearerAuth: [] }],
                 responses: {
                     '200': { description: 'Pending payout transactions' },
+                },
+            },
+        },
+        '/api/admin/payouts/{id}/process': {
+            patch: {
+                tags: ['Admin'],
+                summary: 'Approve or decline a merchant payout',
+                security: [{ BearerAuth: [] }],
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+                requestBody: {
+                    required: true,
+                    content: {
+                        'application/json': {
+                            schema: {
+                                type: 'object',
+                                required: ['status'],
+                                properties: {
+                                    status: { type: 'string', enum: ['COMPLETED', 'FAILED'] },
+                                    note: { type: 'string' },
+                                },
+                            },
+                        },
+                    },
+                },
+                responses: {
+                    '200': { description: 'Payout processed' },
+                    '404': { description: 'Payout not found' },
+                },
+            },
+        },
+        '/api/admin/transactions': {
+            get: {
+                tags: ['Admin'],
+                summary: 'Monitor all system transactions',
+                description: 'Paginated list with optional type and status filters.',
+                security: [{ BearerAuth: [] }],
+                parameters: [
+                    { name: 'type', in: 'query', schema: { type: 'string', enum: ['DEPOSIT', 'WITHDRAWAL', 'GOAL_FUNDING', 'GOAL_WITHDRAWAL', 'MERCHANT_PAYOUT', 'AUTOMATED_SAVINGS'] } },
+                    { name: 'status', in: 'query', schema: { type: 'string', enum: ['PENDING', 'COMPLETED', 'FAILED', 'CANCELLED'] } },
+                    { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
+                    { name: 'limit', in: 'query', schema: { type: 'integer', default: 50 } },
+                ],
+                responses: {
+                    '200': { description: 'Paginated transaction list' },
                 },
             },
         },

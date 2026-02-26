@@ -35,11 +35,43 @@ export class KycService {
                 idNumber: data.idNumber,
                 idImageUrl: data.idImageUrl,
                 selfieImageUrl: data.selfieImageUrl,
+                selfieVerified: false, // Reset selfie verification on resubmission
+                selfieMatchScore: null,
+                selfieReviewNote: null,
                 bankName: data.bankName,
                 bankAccountNo: data.bankAccountNo,
                 bankAccountName: data.bankAccountName,
                 kycStatus: KYCStatus.PENDING,
                 kycNote: null // Reset note on re-submission
+            }
+        });
+    }
+
+    /**
+     * Submit or resubmit selfie only
+     */
+    static async submitSelfie(userId: string, selfieImageUrl: string) {
+        const profile = await prisma.profile.findFirst({
+            where: { userId }
+        });
+
+        if (!profile) {
+            throw new ApiException(404, 'NOT_FOUND', 'User profile not found');
+        }
+
+        if (profile.kycStatus === KYCStatus.VERIFIED && profile.selfieVerified) {
+            throw new ApiException(400, 'ALREADY_VERIFIED', 'Your selfie is already verified');
+        }
+
+        return prisma.profile.update({
+            where: { id: profile.id },
+            data: {
+                selfieImageUrl,
+                selfieVerified: false,
+                selfieMatchScore: null,
+                selfieReviewNote: null,
+                // If KYC was failed due to selfie, reset to PENDING
+                ...(profile.kycStatus === KYCStatus.FAILED ? { kycStatus: KYCStatus.PENDING, kycNote: 'Selfie resubmitted' } : {})
             }
         });
     }
@@ -57,6 +89,9 @@ export class KycService {
                 idNumber: true,
                 idImageUrl: true,
                 selfieImageUrl: true,
+                selfieVerified: true,
+                selfieMatchScore: true,
+                selfieReviewNote: true,
                 bankName: true,
                 bankAccountNo: true,
                 bankAccountName: true,
