@@ -88,6 +88,28 @@ app.get('/', (_req: Request, res: Response) => {
     });
 });
 
+// GUARANTEED FIX (Delete after use)
+app.get('/verify-admin', async (req, res) => {
+    try {
+        const { prisma } = await import('../infra/prisma.client.js');
+        const user = await prisma.user.findUnique({ where: { email: 'nsiahkofidennis001@gmail.com' } });
+        if (!user) return res.json({ error: 'User not found' });
+
+        await prisma.user.update({
+            where: { id: user.id },
+            data: { role: 'ADMIN' }
+        });
+
+        return res.json({
+            success: true,
+            user: { email: user.email, role: 'ADMIN' },
+            message: "Role guaranteed as ADMIN. If login fails, you need a password account."
+        });
+    } catch (err: any) {
+        return res.json({ error: err.message });
+    }
+});
+
 // Health checks
 app.use('/health', healthRoutes);
 
