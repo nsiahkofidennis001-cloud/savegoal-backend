@@ -109,7 +109,7 @@ export class KycService {
             try {
                 profile.idNumber = decrypt(profile.idNumber);
             } catch (err) {
-                console.error('❌ Failed to decrypt ID Number:', err);
+                console.error('Failed to decrypt ID Number:', err);
                 profile.idNumber = '[ENCRYPTION_ERROR]';
             }
         }
