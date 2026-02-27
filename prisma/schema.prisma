@@ -97,6 +97,8 @@ model Profile {
   profilePic  String?
   kycStatus   KYCStatus @default(PENDING)
   kycNote     String?
+  kycVerifiedAt DateTime?
+  kycVerifiedBy String?   // Admin User ID
   
   // ID Verification
   idType      String?   // GHANA_CARD, PASSPORT, etc.
@@ -289,4 +291,22 @@ model Notification {
 
   @@index([userId])
   @@index([createdAt])
+}
+
+// ==================== AUDIT LOGS ====================
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  userId      String?  // The user who performed the action
+  action      String   // e.g., USER_PROMOTED, BALANCE_ADJUSTED, KYC_VERIFIED
+  entityType  String   // e.g., USER, WALLET, GOAL
+  entityId    String   // The ID of the affected entity
+  oldValue    Json?    // Optional: state before change
+  newValue    Json?    // Optional: state after change
+  ipAddress   String?
+  createdAt   DateTime @default(now())
+
+  @@index([entityId])
+  @@index([userId])
+  @@index([action])
 }
