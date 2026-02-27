@@ -1,9 +1,9 @@
 import crypto from 'crypto';
-import { env } from '../config/env.config.js';
+import { env } from '../../config/env.config.js';
 
 // The key should be 32 bytes (256 bits) for aes-256-gcm
 // We use a salt-like derivation if the key isn't exactly 32 bytes
-const ENCRYPTION_KEY = crypto.scryptSync(env.AUTH_SECRET || 'fallback-secret-if-missing', 'savegoal-salt', 32);
+const ENCRYPTION_KEY = crypto.scryptSync(env.BETTER_AUTH_SECRET, 'savegoal-salt', 32);
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 16;
 const AUTH_TAG_LENGTH = 16;
