@@ -91,34 +91,6 @@ app.get('/', (_req: Request, res: Response) => {
 // Health checks
 app.use('/health', healthRoutes);
 
-// TEMPORARY: Admin Setup Route (Delete after use)
-app.get('/api/admin-setup', async (req, res) => {
-    const { email } = req.query;
-    if (!email || email !== 'nsiahkofidennis001@gmail.com') {
-        return res.status(403).json({ error: 'Unauthorized email' });
-    }
-    try {
-        const { prisma } = await import('../infra/prisma.client.js');
-        const { WalletService } = await import('../modules/wallet/wallet.service.js');
-
-        const user = await prisma.user.findUnique({ where: { email: email as string } });
-        if (!user) return res.status(404).json({ error: 'User not found. Please sign up first.' });
-
-        await prisma.user.update({
-            where: { id: user.id },
-            data: { role: 'ADMIN' }
-        });
-
-        try {
-            await WalletService.createWallet(user.id);
-        } catch (e) { }
-
-        return res.json({ success: true, message: `User ${email} is now an ADMIN. Please delete this route!` });
-    } catch (err: any) {
-        return res.status(500).json({ error: err.message });
-    }
-});
-
 // Admin Dashboard (HTML UI)
 app.use('/admin', adminDashboardRoutes);
 

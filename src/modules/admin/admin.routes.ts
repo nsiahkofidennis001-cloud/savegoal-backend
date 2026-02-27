@@ -117,6 +117,23 @@ router.patch('/users/:id/suspend', async (req: Request, res: Response) => {
     }
 });
 
+/**
+ * PATCH /api/admin/users/:id/role
+ * Update user role (promote/demote)
+ */
+router.patch('/users/:id/role', async (req: Request, res: Response) => {
+    try {
+        const { role } = req.body;
+        if (!role) {
+            return error(res, 'VALIDATION_ERROR', 'role is required', 400);
+        }
+        const result = await AdminService.updateUserRole(req.params.id, role);
+        return success(res, result);
+    } catch (err: any) {
+        return error(res, err.code || 'INTERNAL_ERROR', err.message, err.statusCode || 500);
+    }
+});
+
 // ==================== MERCHANT MANAGEMENT ====================
 
 /**

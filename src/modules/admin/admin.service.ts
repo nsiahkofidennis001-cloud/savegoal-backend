@@ -724,4 +724,37 @@ export class AdminService {
 
         return activities.slice(0, limit);
     }
+
+    /**
+     * Update a user's role (promote/demote)
+     */
+    static async updateUserRole(userId: string, role: string) {
+        if (!['CONSUMER', 'MERCHANT', 'ADMIN'].includes(role)) {
+            throw new ApiException(400, 'BAD_REQUEST', 'Invalid role. Must be CONSUMER, MERCHANT, or ADMIN');
+        }
+
+        const user = await prisma.user.findUnique({
+            where: { id: userId }
+        });
+
+        if (!user) {
+            throw new ApiException(404, 'NOT_FOUND', 'User not found');
+        }
+
+        const updated = await prisma.user.update({
+            where: { id: userId },
+            data: { role: role as any }
+        });
+
+        // Notify user of role change
+        await NotificationService.send({
+            userId,
+            title: 'Account Role Updated',
+            message: `Your account role has been updated to ${role}.`,
+            category: 'SECURITY',
+            channels: ['IN_APP']
+        });
+
+        return updated;
+    }
 }

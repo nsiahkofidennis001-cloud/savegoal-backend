@@ -992,6 +992,40 @@ const swaggerDefinition: swaggerJsdoc.OAS3Definition = {
                 },
             },
         },
+        '/api/admin/users/{id}/role': {
+            patch: {
+                tags: ['Admin'],
+                summary: 'Update user role (promote/demote)',
+                description: 'Updates a user\'s system role. Role must be CONSUMER, MERCHANT, or ADMIN.',
+                security: [{ BearerAuth: [] }],
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+                requestBody: {
+                    required: true,
+                    content: {
+                        'application/json': {
+                            schema: {
+                                type: 'object',
+                                required: ['role'],
+                                properties: {
+                                    role: {
+                                        type: 'string',
+                                        enum: ['CONSUMER', 'MERCHANT', 'ADMIN'],
+                                        description: 'The new role for the user'
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+                responses: {
+                    '200': { description: 'User role updated successfully' },
+                    '400': { description: 'Invalid role' },
+                    '401': { description: 'Unauthorized' },
+                    '403': { description: 'Forbidden - Admin only' },
+                    '404': { description: 'User not found' },
+                },
+            },
+        },
         '/api/admin/merchants': {
             get: {
                 tags: ['Admin'],
