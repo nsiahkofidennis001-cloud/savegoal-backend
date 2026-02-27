@@ -88,6 +88,17 @@ app.get('/', (_req: Request, res: Response) => {
     });
 });
 
+// TEMPORARY: Seed Products Route
+app.get('/api/seed-products', async (_req, res) => {
+    try {
+        const { seedProducts } = await import('../scripts/seed-products.js');
+        await seedProducts();
+        return res.json({ success: true, message: 'Products seeded successfully!' });
+    } catch (err: any) {
+        return res.status(500).json({ error: err.message });
+    }
+});
+
 // Health checks
 app.use('/health', healthRoutes);
 
