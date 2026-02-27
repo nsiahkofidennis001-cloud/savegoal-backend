@@ -1,5 +1,4 @@
 import { execSync } from 'child_process';
-import fetch from 'node-fetch';
 
 const URL = 'http://localhost:3000';
 const phone = '+233546351308';
