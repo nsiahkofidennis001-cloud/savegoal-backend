@@ -2,6 +2,7 @@ import { prisma } from '../../infra/prisma.client.js';
 import { ApiException } from '../../shared/exceptions/api.exception.js';
 import { NotificationService } from '../notifications/notification.service.js';
 import { AuditService } from '../../shared/services/audit.service.js';
+import { decrypt } from '../../shared/utils/encryption.util.js';
 
 export class AdminService {
     // ==================== DASHBOARD ====================
@@ -260,6 +261,16 @@ export class AdminService {
             });
         }
 
+        // Decrypt ID Number if present in profile
+        if (user.profile?.idNumber) {
+            try {
+                user.profile.idNumber = decrypt(user.profile.idNumber);
+            } catch (err) {
+                console.error('❌ Failed to decrypt ID Number for admin:', err);
+                user.profile.idNumber = '[ENCRYPTION_ERROR]';
+            }
+        }
+
         return { ...user, transactions };
     }
 
@@ -433,6 +444,15 @@ export class AdminService {
 
         if (!profile) {
             throw new ApiException(404, 'NOT_FOUND', 'User profile not found');
+        }
+
+        if (profile.idNumber) {
+            try {
+                profile.idNumber = decrypt(profile.idNumber);
+            } catch (err) {
+                console.error('❌ Failed to decrypt ID Number for admin (KYC):', err);
+                profile.idNumber = '[ENCRYPTION_ERROR]';
+            }
         }
 
         return profile;
