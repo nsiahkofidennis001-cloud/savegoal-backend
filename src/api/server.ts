@@ -44,7 +44,11 @@ app.use(
 app.use(
     cors({
         origin: env.NODE_ENV === 'production'
-            ? ['https://savegoal.com', 'https://save-goal-frontend.vercel.app']
+            ? [
+                'https://savegoal.com',
+                'https://save-goal-frontend.vercel.app',
+                'https://savegoal-backend-2.onrender.com' // Allow Swagger UI
+            ]
             : '*',
         credentials: true,
     })
