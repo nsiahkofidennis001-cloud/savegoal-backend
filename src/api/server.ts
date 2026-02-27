@@ -91,6 +91,33 @@ app.get('/', (_req: Request, res: Response) => {
 // Health checks
 app.use('/health', healthRoutes);
 
+// DEBUG: Internal Diagnostic Route (Delete after use)
+app.get('/api/admin-debug', async (req, res) => {
+    const { email } = req.query;
+    if (!email || email !== 'nsiahkofidennis001@gmail.com') return res.status(403).json({ error: 'Auth failed' });
+    try {
+        const { prisma } = await import('../infra/prisma.client.js');
+        const user = await prisma.user.findUnique({
+            where: { email: email as string },
+            include: { accounts: true }
+        });
+        if (!user) return res.json({ status: 'not_found' });
+
+        return res.json({
+            id: user.id,
+            role: user.role,
+            accountCount: user.accounts.length,
+            accounts: user.accounts.map(a => ({
+                provider: a.providerId,
+                hasPassword: !!a.password,
+                createdAt: a.createdAt
+            }))
+        });
+    } catch (err: any) {
+        return res.status(500).json({ error: err.message });
+    }
+});
+
 // Admin Dashboard (HTML UI)
 app.use('/admin', adminDashboardRoutes);
 
