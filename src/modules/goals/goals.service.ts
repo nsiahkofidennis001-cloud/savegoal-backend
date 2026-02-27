@@ -83,6 +83,7 @@ export class GoalsService {
     static async getUserGoals(userId: string) {
         return prisma.goal.findMany({
             where: { userId },
+            include: { product: true },
             orderBy: { createdAt: 'desc' },
         });
     }
@@ -93,6 +94,7 @@ export class GoalsService {
     static async getGoal(userId: string, goalId: string) {
         const goal = await prisma.goal.findUnique({
             where: { id: goalId },
+            include: { product: true },
         });
 
         if (!goal || goal.userId !== userId) {
