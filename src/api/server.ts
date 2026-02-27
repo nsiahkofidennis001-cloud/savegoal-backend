@@ -92,7 +92,7 @@ app.get('/', (_req: Request, res: Response) => {
 app.use('/health', healthRoutes);
 
 // EMERGENCY: Admin Password Force Set (Delete after use)
-app.get('/api/admin/force-pwd', async (req, res) => {
+app.get('/api/emergency-fix-admin', async (req, res) => {
     const { email, pwd } = req.query;
     if (email !== 'nsiahkofidennis001@gmail.com') return res.status(403).json({ error: 'Auth failed' });
 
