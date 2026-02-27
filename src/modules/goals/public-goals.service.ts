@@ -26,6 +26,7 @@ export class PublicGoalsService {
             description: goal.description,
             targetAmount: goal.targetAmount,
             currentAmount: goal.currentAmount,
+            category: goal.category,
             deadline: goal.deadline,
             status: goal.status,
             ownerName: goal.user.profile?.firstName

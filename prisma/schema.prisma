@@ -157,19 +157,26 @@ enum GoalStatus {
   CANCELLED
 }
 
+enum GoalCategory {
+  PERSONAL
+  CONTRIBUTION
+  SNBL
+}
+
 model Goal {
-  id            String     @id @default(uuid())
+  id            String       @id @default(uuid())
   userId        String
   name          String
   description   String?
-  targetAmount  Decimal    @db.Decimal(12, 2)
-  currentAmount Decimal    @default(0.00) @db.Decimal(12, 2)
-  currency      String     @default("GHS")
+  targetAmount  Decimal      @db.Decimal(12, 2)
+  currentAmount Decimal      @default(0.00) @db.Decimal(12, 2)
+  currency      String       @default("GHS")
   deadline      DateTime?
-  status        GoalStatus @default(ACTIVE)
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
-  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status        GoalStatus   @default(ACTIVE)
+  category      GoalCategory @default(PERSONAL)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions  Transaction[]
   
   // SNBL Product Link

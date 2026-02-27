@@ -28,7 +28,7 @@ router.get('/', async (req: Request, res: Response) => {
 router.post('/', async (req: Request, res: Response) => {
     try {
         const userId = req.user!.id;
-        const { name, targetAmount, deadline, description, productId, isRecurring, monthlyAmount, savingsDay } = req.body;
+        const { name, targetAmount, deadline, description, productId, isRecurring, monthlyAmount, savingsDay, category } = req.body;
 
         if (!name) {
             return error(res, 'VALIDATION_ERROR', 'Name is required', 400);
@@ -40,6 +40,7 @@ router.post('/', async (req: Request, res: Response) => {
             deadline,
             description,
             productId,
+            category,
             isRecurring,
             monthlyAmount,
             savingsDay

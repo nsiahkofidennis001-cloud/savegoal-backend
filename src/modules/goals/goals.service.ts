@@ -14,14 +14,17 @@ export class GoalsService {
         deadline?: string;
         description?: string;
         productId?: string;
+        category?: 'PERSONAL' | 'CONTRIBUTION' | 'SNBL';
         isRecurring?: boolean;
         monthlyAmount?: number;
         savingsDay?: number;
     }) {
         let finalTargetAmount = data.targetAmount;
+        let finalCategory = data.category || 'PERSONAL';
 
         // If productId is provided, fetch product and set target amount
         if (data.productId) {
+            finalCategory = 'SNBL';
             const product = await prisma.product.findUnique({
                 where: { id: data.productId }
             });
@@ -46,6 +49,7 @@ export class GoalsService {
                 description: data.description,
                 productId: data.productId,
                 status: 'ACTIVE',
+                category: finalCategory as any,
                 isRecurring: data.isRecurring || false,
                 monthlyAmount: data.monthlyAmount,
                 savingsDay: data.savingsDay,
