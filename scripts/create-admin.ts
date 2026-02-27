@@ -24,32 +24,35 @@ async function createAdmin() {
     console.log(`🚀 Creating admin user: ${email}...`);
 
     try {
+        let userId: string;
+
         // 1. Check if user already exists
         const existingUser = await prisma.user.findUnique({ where: { email } });
+
         if (existingUser) {
-            console.error(`❌ Error: User with email ${email} already exists.`);
-            process.exit(1);
+            console.log(`ℹ️ User ${email} already exists. Promoting to ADMIN...`);
+            userId = existingUser.id;
+        } else {
+            // 2. Create user via better-auth (to handle hashing properly)
+            const authResponse = await auth.api.signUpEmail({
+                body: {
+                    email,
+                    password,
+                    name,
+                },
+            });
+
+            if (!authResponse || !authResponse.user) {
+                console.error('❌ Error: Failed to create user via better-auth.');
+                process.exit(1);
+            }
+            userId = authResponse.user.id;
+            console.log('✅ New user account created.');
         }
-
-        // 2. Create user via better-auth (to handle hashing properly)
-        const authResponse = await auth.api.signUpEmail({
-            body: {
-                email,
-                password,
-                name,
-            },
-        });
-
-        if (!authResponse || !authResponse.user) {
-            console.error('❌ Error: Failed to create user via better-auth.');
-            process.exit(1);
-        }
-
-        const user = authResponse.user;
 
         // 3. Update role to ADMIN
         await prisma.user.update({
-            where: { id: user.id },
+            where: { id: userId },
             data: { role: 'ADMIN' },
         });
 
@@ -57,13 +60,13 @@ async function createAdmin() {
 
         // 4. Create Wallet
         try {
-            await WalletService.createWallet(user.id);
+            await WalletService.createWallet(userId);
             console.log('✅ Wallet created for admin.');
         } catch (walletError) {
             console.warn('⚠️ Warning: Failed to create wallet, it may need to be created manually.');
         }
 
-        console.log(`\n🎉 Admin user created successfully!\nEmail: ${email}\nName: ${name}\nID: ${user.id}\n`);
+        console.log(`\n🎉 Admin user created successfully!\nEmail: ${email}\nName: ${name}\nID: ${userId}\n`);
         process.exit(0);
     } catch (err: any) {
         console.error('❌ Unexpected Error:', err.message || err);
