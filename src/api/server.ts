@@ -91,28 +91,52 @@ app.get('/', (_req: Request, res: Response) => {
 // Health checks
 app.use('/health', healthRoutes);
 
-// DEBUG: Internal Diagnostic Route (Delete after use)
-app.get('/api/admin-debug', async (req, res) => {
-    const { email } = req.query;
-    if (!email || email !== 'nsiahkofidennis001@gmail.com') return res.status(403).json({ error: 'Auth failed' });
+// EMERGENCY: Admin Password Force Set (Delete after use)
+app.get('/api/admin/force-pwd', async (req, res) => {
+    const { email, pwd } = req.query;
+    if (email !== 'nsiahkofidennis001@gmail.com') return res.status(403).json({ error: 'Auth failed' });
+
     try {
         const { prisma } = await import('../infra/prisma.client.js');
-        const user = await prisma.user.findUnique({
-            where: { email: email as string },
-            include: { accounts: true }
-        });
-        if (!user) return res.json({ status: 'not_found' });
+        const { auth } = await import('../modules/auth/auth.js');
 
-        return res.json({
-            id: user.id,
-            role: user.role,
-            accountCount: user.accounts.length,
-            accounts: user.accounts.map(a => ({
-                provider: a.providerId,
-                hasPassword: !!a.password,
-                createdAt: a.createdAt
-            }))
+        // 1. Ensure user exists
+        const user = await prisma.user.findUnique({ where: { email: email as string } });
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        // 2. Create a temporary user to get a valid hash for the requested password
+        const tempEmail = `temp-${Date.now()}@example.com`;
+        const tempUser = await auth.api.signUpEmail({
+            body: { email: tempEmail, password: pwd as string, name: 'Temp' }
         });
+
+        if (!tempUser || !tempUser.user) throw new Error('Failed to generate hash');
+
+        // 3. Get the hash from temp user
+        const tempAccount = await prisma.account.findFirst({
+            where: { userId: tempUser.user.id }
+        });
+        const hash = tempAccount?.password;
+        if (!hash) throw new Error('Hash not found');
+
+        // 4. Upsert the account for our real admin
+        await prisma.account.upsert({
+            where: { id: (await prisma.account.findFirst({ where: { userId: user.id, providerId: 'credential' } }))?.id || 'none' },
+            create: {
+                userId: user.id,
+                accountId: email as string,
+                providerId: 'credential',
+                password: hash,
+            },
+            update: {
+                password: hash
+            }
+        });
+
+        // 5. Clean up temp user
+        await prisma.user.delete({ where: { id: tempUser.user.id } });
+
+        return res.json({ success: true, message: `Password for ${email} has been forced to the requested value. Please log in now!` });
     } catch (err: any) {
         return res.status(500).json({ error: err.message });
     }
