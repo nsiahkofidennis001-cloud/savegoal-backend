@@ -1,6 +1,7 @@
 import { prisma } from '../../infra/prisma.client.js';
 import { ApiException } from '../../shared/exceptions/api.exception.js';
 import { NotificationService } from '../notifications/notification.service.js';
+import { AuditService } from '../../shared/services/audit.service.js';
 
 export class AdminService {
     // ==================== DASHBOARD ====================
@@ -454,9 +455,19 @@ export class AdminService {
             data: {
                 kycStatus: status,
                 kycNote: note,
+                kycVerifiedAt: status === 'VERIFIED' ? new Date() : null,
                 // If approving KYC and selfie was submitted, mark selfie verified too
                 ...(status === 'VERIFIED' && profile.selfieImageUrl ? { selfieVerified: true } : {})
             }
+        });
+
+        // Audit Log
+        await AuditService.record({
+            action: status === 'VERIFIED' ? 'KYC_VERIFIED' : 'KYC_REJECTED',
+            entityType: 'USER_PROFILE',
+            entityId: profile.id,
+            oldValue: { status: profile.kycStatus },
+            newValue: { status, note }
         });
 
         // Notify user
@@ -744,6 +755,15 @@ export class AdminService {
         const updated = await prisma.user.update({
             where: { id: userId },
             data: { role: role as any }
+        });
+
+        // Audit Log
+        await AuditService.record({
+            action: 'ROLE_CHANGED',
+            entityType: 'USER',
+            entityId: userId,
+            oldValue: { role: user.role },
+            newValue: { role }
         });
 
         // Notify user of role change

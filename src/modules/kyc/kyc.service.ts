@@ -1,6 +1,7 @@
 import { prisma } from '../../infra/prisma.client.js';
 import { ApiException } from '../../shared/exceptions/api.exception.js';
 import { KYCStatus } from '@prisma/client';
+import { encrypt, decrypt } from '../../shared/utils/encryption.util.js';
 
 export class KycService {
     /**
@@ -32,7 +33,7 @@ export class KycService {
             where: { id: profile.id },
             data: {
                 idType: data.idType,
-                idNumber: data.idNumber,
+                idNumber: encrypt(data.idNumber),
                 idImageUrl: data.idImageUrl,
                 selfieImageUrl: data.selfieImageUrl,
                 selfieVerified: false, // Reset selfie verification on resubmission
@@ -101,6 +102,16 @@ export class KycService {
 
         if (!profile) {
             throw new ApiException(404, 'NOT_FOUND', 'User profile not found');
+        }
+
+        // Decrypt ID Number if present
+        if (profile.idNumber) {
+            try {
+                profile.idNumber = decrypt(profile.idNumber);
+            } catch (err) {
+                console.error('❌ Failed to decrypt ID Number:', err);
+                profile.idNumber = '[ENCRYPTION_ERROR]';
+            }
         }
 
         return profile;
