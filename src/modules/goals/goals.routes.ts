@@ -8,8 +8,16 @@ const router = Router();
 router.use(requireAuth);
 
 /**
- * GET /api/goals
- * List all goals
+ * @swagger
+ * /goals:
+ *   get:
+ *     summary: List all goals for the logged-in user
+ *     tags: [Goals]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of goals
  */
 router.get('/', async (req: Request, res: Response) => {
     try {
@@ -22,8 +30,48 @@ router.get('/', async (req: Request, res: Response) => {
 });
 
 /**
- * POST /api/goals
- * Create new goal
+ * @swagger
+ * /goals:
+ *   post:
+ *     summary: Create a new savings goal
+ *     tags: [Goals]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - targetAmount
+ *             properties:
+ *               name:
+ *                 type: string
+ *               targetAmount:
+ *                 type: number
+ *               deadline:
+ *                 type: string
+ *                 format: date-time
+ *               description:
+ *                 type: string
+ *               productId:
+ *                 type: string
+ *                 description: Required for SNBL goals
+ *               category:
+ *                 type: string
+ *                 enum: [PERSONAL, CONTRIBUTION, SNBL]
+ *                 default: PERSONAL
+ *               isRecurring:
+ *                 type: boolean
+ *               monthlyAmount:
+ *                 type: number
+ *               savingsDay:
+ *                 type: integer
+ *     responses:
+ *       201:
+ *         description: Goal created successfully
  */
 router.post('/', async (req: Request, res: Response) => {
     try {

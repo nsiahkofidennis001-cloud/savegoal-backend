@@ -88,17 +88,6 @@ app.get('/', (_req: Request, res: Response) => {
     });
 });
 
-// TEMPORARY: Seed Products V2 Route
-app.get('/api/seed-products-v2', async (_req, res) => {
-    try {
-        const { seedExpandedProducts } = await import('../scripts/seed-products-v2.js');
-        await seedExpandedProducts();
-        return res.json({ success: true, message: 'Expanded products seeded successfully!' });
-    } catch (err: any) {
-        return res.status(500).json({ error: err.message });
-    }
-});
-
 // Health checks
 app.use('/health', healthRoutes);
 
