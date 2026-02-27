@@ -560,6 +560,15 @@ const swaggerDefinition: swaggerJsdoc.OAS3Definition = {
                                         example: 'Saving for a new smartphone',
                                         description: 'Optional description',
                                     },
+                                    productId: {
+                                        type: 'string',
+                                        description: 'Required for SNBL goals',
+                                    },
+                                    category: {
+                                        type: 'string',
+                                        enum: ['PERSONAL', 'CONTRIBUTION', 'SNBL'],
+                                        default: 'PERSONAL',
+                                    },
                                 },
                             },
                         },
