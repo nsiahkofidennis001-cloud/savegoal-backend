@@ -16,6 +16,7 @@ import phoneOtpRoutes from '../modules/auth/phone/phone-otp.routes.js';
 import emailAuthRoutes from '../modules/auth/email/email-auth.routes.js';
 import walletRoutes from '../modules/wallet/wallet.routes.js';
 import goalsRoutes from '../modules/goals/goals.routes.js';
+import publicGoalsRoutes from '../modules/goals/public-goals.routes.js';
 import paymentRoutes from '../modules/payments/payment.routes.js';
 import merchantsRoutes from '../modules/merchants/merchants.routes.js';
 import productRoutes from '../modules/products/products.routes.js';

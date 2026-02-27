@@ -140,13 +140,25 @@ export class PaymentService {
      */
     static async fulfillPayment(reference: string) {
         return prisma.$transaction(async (tx) => {
-            // 1. Find the pending transaction
-            const transaction = await tx.transaction.findFirst({
+            // 1. Find the pending transaction OR goal contribution
+            let transaction: any = await tx.transaction.findFirst({
                 where: { reference, status: 'PENDING' },
             });
 
+            let isPublicContribution = false;
+
             if (!transaction) {
-                console.warn(`Transaction not found or already processed: ${reference}`);
+                // Check if it's a public contribution
+                transaction = await tx.goalContribution.findFirst({
+                    where: { reference, status: 'PENDING' }
+                });
+                if (transaction) {
+                    isPublicContribution = true;
+                }
+            }
+
+            if (!transaction) {
+                console.warn(`Transaction/Contribution not found or already processed: ${reference}`);
                 return;
             }
 
@@ -154,60 +166,117 @@ export class PaymentService {
             const paystackData = await PaystackProvider.verifyTransaction(reference);
 
             if (paystackData.data.status !== 'success') {
-                await tx.transaction.update({
-                    where: { id: transaction.id },
-                    data: { status: 'FAILED', metadata: { ... (transaction.metadata as object), error: 'Paystack verification failed' } },
-                });
+                if (isPublicContribution) {
+                    await tx.goalContribution.update({
+                        where: { id: transaction.id },
+                        data: { status: 'FAILED' }
+                    });
+                } else {
+                    await tx.transaction.update({
+                        where: { id: transaction.id },
+                        data: { status: 'FAILED', metadata: { ... (transaction.metadata as object), error: 'Paystack verification failed' } },
+                    });
+                }
                 return;
             }
 
-            // 3. Update Transaction to COMPLETED
-            const updatedTransaction = await tx.transaction.update({
-                where: { id: transaction.id },
-                data: {
-                    status: 'COMPLETED',
-                    metadata: {
-                        ...(transaction.metadata as object),
-                        paystack_raw: paystackData.data,
-                    },
-                },
-            });
+            // 3. Update Status to COMPLETED
+            let updatedTransaction;
 
-            // 4. Handle based on type
-            if (transaction.type === 'DEPOSIT') {
-                // Credit the Wallet
-                await tx.wallet.update({
-                    where: { id: transaction.walletId },
-                    data: {
-                        balance: {
-                            increment: transaction.amount,
-                        },
-                    },
+            if (isPublicContribution) {
+                updatedTransaction = await tx.goalContribution.update({
+                    where: { id: transaction.id },
+                    data: { status: 'COMPLETED' },
                 });
-            } else if (transaction.type === 'GOAL_FUNDING' && transaction.goalId) {
-                // Credit the Goal directly
-                const updatedGoal = await tx.goal.update({
+
+                // For public contributions, we must locate the goal's owner
+                const goal = await tx.goal.findUnique({
                     where: { id: transaction.goalId },
+                    include: { user: { include: { wallet: true } } }
+                });
+
+                if (goal && goal.user.wallet) {
+                    // Credit the Wallet
+                    await tx.wallet.update({
+                        where: { id: goal.user.wallet.id },
+                        data: { balance: { increment: transaction.amount } }
+                    });
+
+                    // Create a mirror Transaction record for the ledger
+                    await tx.transaction.create({
+                        data: {
+                            walletId: goal.user.wallet.id,
+                            goalId: goal.id,
+                            type: 'PUBLIC_CONTRIBUTION',
+                            amount: transaction.amount,
+                            status: 'COMPLETED',
+                            reference: transaction.reference,
+                            metadata: {
+                                contributorName: transaction.contributorName,
+                                contributionId: transaction.id
+                            }
+                        }
+                    });
+                }
+            } else {
+                updatedTransaction = await tx.transaction.update({
+                    where: { id: transaction.id },
                     data: {
-                        currentAmount: {
-                            increment: transaction.amount,
+                        status: 'COMPLETED',
+                        metadata: {
+                            ...(transaction.metadata as object),
+                            paystack_raw: paystackData.data,
                         },
                     },
                 });
 
-                // Check if goal reached
-                if (updatedGoal.currentAmount.greaterThanOrEqualTo(updatedGoal.targetAmount)) {
-                    await tx.goal.update({
-                        where: { id: transaction.goalId },
-                        data: { status: 'COMPLETED' },
+                // 4. Handle based on type
+                if (transaction.type === 'DEPOSIT') {
+                    // Credit the Wallet
+                    await tx.wallet.update({
+                        where: { id: transaction.walletId },
+                        data: {
+                            balance: {
+                                increment: transaction.amount,
+                            },
+                        },
                     });
+                } else if (transaction.type === 'GOAL_FUNDING' && transaction.goalId) {
+                    // Credit the Goal directly
+                    const updatedGoal = await tx.goal.update({
+                        where: { id: transaction.goalId },
+                        data: {
+                            currentAmount: {
+                                increment: transaction.amount,
+                            },
+                        },
+                    });
+
+                    // Check if goal reached
+                    if (updatedGoal.currentAmount.greaterThanOrEqualTo(updatedGoal.targetAmount)) {
+                        await tx.goal.update({
+                            where: { id: transaction.goalId },
+                            data: { status: 'COMPLETED' },
+                        });
+                    }
                 }
             }
 
             console.info(`✅ Successfully fulfilled ${transaction.type} for reference: ${reference}`);
 
             // 5. Notify User
-            if (transaction.type === 'DEPOSIT') {
+            if (isPublicContribution) {
+                const goal = await tx.goal.findUnique({ where: { id: transaction.goalId } });
+                if (goal) {
+                    await NotificationService.send({
+                        userId: goal.userId,
+                        title: 'New Goal Contribution! 🎉',
+                        message: `${transaction.contributorName} just contributed ${transaction.amount} GHS to your goal: "${goal.name}".`,
+                        category: 'GOAL_UPDATE',
+                        channels: ['IN_APP', 'SMS']
+                    });
+                }
+            } else if (transaction.type === 'DEPOSIT') {
                 await NotificationService.send({
                     userId: transaction.walletId, // Wallet ID is used as fallback, but service needs userId
                     title: 'Deposit Successful',

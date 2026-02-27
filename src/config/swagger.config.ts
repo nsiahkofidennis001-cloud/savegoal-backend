@@ -438,6 +438,84 @@ const swaggerDefinition: swaggerJsdoc.OAS3Definition = {
             },
         },
 
+        // ==================== PUBLIC GOALS ====================
+        '/api/goals/public/{id}': {
+            get: {
+                tags: ['Public Goals'],
+                summary: 'Get public-facing details of a goal',
+                description: 'Returns basic goal info suitable for public viewing without auth.',
+                parameters: [
+                    {
+                        name: 'id',
+                        in: 'path',
+                        required: true,
+                        schema: { type: 'string' },
+                        description: 'The Goal ID',
+                    },
+                ],
+                responses: {
+                    '200': { description: 'Public Goal Details' },
+                    '404': { description: 'Goal not found' },
+                },
+            },
+        },
+        '/api/goals/public/{id}/contributions': {
+            get: {
+                tags: ['Public Goals'],
+                summary: 'Get public contributions for a goal',
+                description: 'Returns a list of successful public contributions (name, message, amount).',
+                parameters: [
+                    {
+                        name: 'id',
+                        in: 'path',
+                        required: true,
+                        schema: { type: 'string' },
+                        description: 'The Goal ID',
+                    },
+                ],
+                responses: {
+                    '200': { description: 'List of contributions' },
+                },
+            },
+        },
+        '/api/goals/public/{id}/contribute': {
+            post: {
+                tags: ['Public Goals'],
+                summary: 'Initialize a public contribution to a goal',
+                description: 'Creates a pending contribution and returns a Paystack checkout URL.',
+                parameters: [
+                    {
+                        name: 'id',
+                        in: 'path',
+                        required: true,
+                        schema: { type: 'string' },
+                        description: 'The Goal ID',
+                    },
+                ],
+                requestBody: {
+                    required: true,
+                    content: {
+                        'application/json': {
+                            schema: {
+                                type: 'object',
+                                required: ['amount', 'contributorName'],
+                                properties: {
+                                    amount: { type: 'number', example: 50.0 },
+                                    contributorName: { type: 'string', example: 'Uncle Bob' },
+                                    contributorEmail: { type: 'string', example: 'bob@example.com' },
+                                    message: { type: 'string', example: 'Happy birthday!' },
+                                },
+                            },
+                        },
+                    },
+                },
+                responses: {
+                    '200': { description: 'Returns Paystack authorization URL and reference' },
+                    '400': { description: 'Validation error or Goal inactive' },
+                },
+            },
+        },
+
         // ==================== GOALS ====================
         '/api/goals': {
             get: {
