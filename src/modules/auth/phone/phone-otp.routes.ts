@@ -89,11 +89,18 @@ router.post('/send-otp', async (req: Request, res: Response) => {
                     data: { message: 'OTP sent successfully' },
                 });
             } catch (twilioErr: any) {
-                console.error('Twilio SMS error:', twilioErr);
-                // FAIL-SAFE FOR TESTING: Return success even if SMS fails so frontend proceeds
-                return res.json({
-                    success: true,
-                    data: { message: 'OTP sent successfully' },
+                console.error(`[SMS ERROR] Failed to send OTP to ${phone}:`, {
+                    code: twilioErr.code,
+                    message: twilioErr.message,
+                    status: twilioErr.status
+                });
+
+                return res.status(500).json({
+                    success: false,
+                    error: {
+                        code: 'SMS_SEND_FAILED',
+                        message: `Failed to send SMS: ${twilioErr.message}`
+                    },
                 });
             }
         } else {

@@ -22,6 +22,10 @@ const envSchema = z.object({
     TWILIO_PHONE_NUMBER: z.string().optional(),
     PAYSTACK_SECRET_KEY: z.string().optional(),
     TEST_PHONE_NUMBER: z.string().optional(),
+
+    // SendGrid
+    SENDGRID_API_KEY: z.string().optional(),
+    FROM_EMAIL: z.string().email().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

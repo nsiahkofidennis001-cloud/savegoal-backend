@@ -14,15 +14,34 @@ export class MerchantsService {
     }) {
         return prisma.$transaction(async (tx) => {
             // 1. Check if already a merchant
-            const existing = await tx.merchantProfile.findUnique({
+            const existingMerchant = await tx.merchantProfile.findUnique({
                 where: { userId }
             });
 
-            if (existing) {
+            if (existingMerchant) {
                 throw new ApiException(400, 'BAD_REQUEST', 'User is already a merchant or has a pending profile');
             }
 
-            // 2. Create profile
+            // 2. Ensure Profile exists (for KYC)
+            const existingProfile = await tx.profile.findUnique({
+                where: { userId }
+            });
+
+            if (!existingProfile) {
+                const user = await tx.user.findUnique({ where: { id: userId } });
+                const nameParts = user?.name.split(' ') || ['User'];
+
+                await tx.profile.create({
+                    data: {
+                        userId,
+                        firstName: nameParts[0],
+                        lastName: nameParts.length > 1 ? nameParts.slice(1).join(' ') : 'SaveGoal',
+                        kycStatus: 'PENDING',
+                    }
+                });
+            }
+
+            // 3. Create merchant profile
             const profile = await tx.merchantProfile.create({
                 data: {
                     userId,
@@ -34,7 +53,7 @@ export class MerchantsService {
                 }
             });
 
-            // 3. Update user role
+            // 4. Update user role
             await tx.user.update({
                 where: { id: userId },
                 data: { role: 'MERCHANT' }

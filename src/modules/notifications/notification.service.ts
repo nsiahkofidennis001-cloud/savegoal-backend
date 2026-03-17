@@ -2,6 +2,7 @@ import { prisma } from '../../infra/prisma.client.js';
 import { env } from '../../config/env.config.js';
 import Twilio from 'twilio';
 import { NotificationCategory } from '@prisma/client';
+import { EmailService } from './email.service.js';
 
 // Initialize Twilio client
 const twilioClient =
@@ -14,7 +15,7 @@ export interface NotificationPayload {
     title: string;
     message: string;
     category?: NotificationCategory;
-    channels: ('IN_APP' | 'SMS' | 'WHATSAPP')[];
+    channels: ('IN_APP' | 'SMS' | 'WHATSAPP' | 'EMAIL')[];
     metadata?: any;
 }
 
@@ -65,7 +66,11 @@ export class NotificationService {
                     results.sms = 'DEV_MODE_MOCK';
                 }
             } catch (err: any) {
-                console.error('SMS notification failed:', err.message);
+                console.error(`[SMS ERROR] Failed to send notification to ${userPhone}:`, {
+                    code: err.code,
+                    message: err.message,
+                    status: err.status
+                });
                 results.smsError = err.message;
             }
         }
@@ -87,6 +92,24 @@ export class NotificationService {
             } catch (err: any) {
                 console.error('WhatsApp notification failed:', err.message);
                 results.whatsappError = err.message;
+            }
+        }
+
+        // 4. Email (SendGrid)
+        if (channels.includes('EMAIL')) {
+            try {
+                // Fetch user for email if needed (Optimization: reuse user fetch if phone was also needed)
+                const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true } });
+                if (user?.email) {
+                    results.email = await EmailService.send({
+                        to: user.email,
+                        subject: title,
+                        text: message,
+                    });
+                }
+            } catch (err: any) {
+                console.error('Email notification failed:', err.message);
+                results.emailError = err.message;
             }
         }
 
