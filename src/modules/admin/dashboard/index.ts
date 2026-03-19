@@ -2,10 +2,10 @@ import { Router, Request, Response } from 'express';
 import { dashboardLayout } from './layout.js';
 import { overviewPage } from './pages/overview.js';
 import { usersPage } from './pages/users.js';
-import { kycPage } from './kyc.js';
-import { merchantsPage } from './merchants.js';
-import { transactionsPage } from './transactions.js';
-import { activityPage } from './activity.js';
+import { kycPage } from './pages/kyc.js';
+import { merchantsPage } from './pages/merchants.js';
+import { transactionsPage } from './pages/transactions.js';
+import { activityPage } from './pages/activity.js';
 
 const router = Router();
 
