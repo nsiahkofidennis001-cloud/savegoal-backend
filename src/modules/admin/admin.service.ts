@@ -1189,7 +1189,7 @@ export class AdminService {
         };
     }
 
-    // ==================== PLATFORM SETTINGS ====================
+    // PLATFORM SETTINGS 
 
     /**
      * Get platform configuration (safe-to-display values)

@@ -51,7 +51,7 @@ router.get('/activity', async (req: Request, res: Response) => {
     }
 });
 
-// ==================== USER MANAGEMENT ====================
+//USER MANAGEMENT 
 
 /**
  * GET /api/admin/users
@@ -134,7 +134,7 @@ router.patch('/users/:id/role', async (req: Request, res: Response) => {
     }
 });
 
-// ==================== MERCHANT MANAGEMENT ====================
+// MERCHANT MANAGEMENT 
 
 /**
  * GET /api/admin/merchants
@@ -166,7 +166,7 @@ router.patch('/merchants/:id/verify', async (req: Request, res: Response) => {
     }
 });
 
-// ==================== KYC MANAGEMENT ====================
+//  KYC MANAGEMENT 
 
 /**
  * GET /api/admin/kyc/pending
@@ -249,7 +249,7 @@ router.patch('/kyc/:userId/selfie', async (req: Request, res: Response) => {
     }
 });
 
-// ==================== PAYOUTS ====================
+// PAYOUTS 
 
 /**
  * GET /api/admin/payouts/pending
@@ -281,7 +281,7 @@ router.patch('/payouts/:id/process', async (req: Request, res: Response) => {
     }
 });
 
-// ==================== TRANSACTIONS ====================
+// TRANSACTIONS 
 
 /**
  * GET /api/admin/transactions
@@ -301,7 +301,7 @@ router.get('/transactions', async (req: Request, res: Response) => {
     }
 });
 
-// ==================== REPORTS ====================
+//  REPORTS 
 
 /**
  * GET /api/admin/reports/revenue
