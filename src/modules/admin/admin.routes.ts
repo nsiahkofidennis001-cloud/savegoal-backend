@@ -9,7 +9,7 @@ const router = Router();
 router.use(requireAuth);
 router.use(requireRole('ADMIN'));
 
-// ==================== DASHBOARD ====================
+// DASHBOARD 
 
 /**
  * GET /api/admin/dashboard
@@ -364,7 +364,7 @@ router.get('/reports/transactions', async (req: Request, res: Response) => {
     }
 });
 
-// ==================== COMPLIANCE ====================
+// COMPLIANCE 
 
 /**
  * GET /api/admin/compliance/overview
@@ -411,7 +411,7 @@ router.get('/compliance/flagged', async (req: Request, res: Response) => {
     }
 });
 
-// ==================== REFUNDS ====================
+// REFUNDS 
 
 /**
  * GET /api/admin/refunds
@@ -462,7 +462,7 @@ router.patch('/refunds/:id/process', async (req: Request, res: Response) => {
     }
 });
 
-// ==================== PLATFORM SETTINGS ====================
+// PLATFORM SETTINGS 
 
 /**
  * GET /api/admin/settings
