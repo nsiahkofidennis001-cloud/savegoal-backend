@@ -266,7 +266,7 @@ export class AdminService {
             try {
                 user.profile.idNumber = decrypt(user.profile.idNumber);
             } catch (err) {
-                console.error('❌ Failed to decrypt ID Number for admin:', err);
+                console.error(' Failed to decrypt ID Number for admin:', err);
                 user.profile.idNumber = '[ENCRYPTION_ERROR]';
             }
         }
@@ -317,7 +317,7 @@ export class AdminService {
         return updated;
     }
 
-    // ==================== MERCHANT MANAGEMENT ====================
+    // MERCHANT MANAGEMENT 
 
     /**
      * List all merchants with verification status
@@ -371,7 +371,7 @@ export class AdminService {
         return updated;
     }
 
-    // ==================== KYC MANAGEMENT ====================
+    //  KYC MANAGEMENT 
 
     /**
      * List all pending KYC submissions
@@ -450,7 +450,7 @@ export class AdminService {
             try {
                 profile.idNumber = decrypt(profile.idNumber);
             } catch (err) {
-                console.error('❌ Failed to decrypt ID Number for admin (KYC):', err);
+                console.error(' Failed to decrypt ID Number for admin (KYC):', err);
                 profile.idNumber = '[ENCRYPTION_ERROR]';
             }
         }
@@ -543,8 +543,7 @@ export class AdminService {
         return updated;
     }
 
-    // ==================== PAYOUTS ====================
-
+    // PAYOUTS 
     /**
      * List all pending merchant payout requests
      */
@@ -624,7 +623,7 @@ export class AdminService {
         });
     }
 
-    // ==================== TRANSACTIONS ====================
+    // TRANSACTIONS 
 
     /**
      * Get global transaction history with filters
@@ -672,7 +671,7 @@ export class AdminService {
         };
     }
 
-    // ==================== ACTIVITY FEED ====================
+    // ACTIVITY FEED 
 
     /**
      * Get recent system activity
@@ -798,7 +797,7 @@ export class AdminService {
         return updated;
     }
 
-    // ==================== REPORTS ====================
+    //  REPORTS 
 
     /**
      * Revenue report: deposits, goal fundings, payouts by date range
@@ -954,7 +953,7 @@ export class AdminService {
         };
     }
 
-    // ==================== COMPLIANCE ====================
+    // COMPLIANCE 
 
     /**
      * Compliance overview: KYC stats, expired verifications, flagged users
