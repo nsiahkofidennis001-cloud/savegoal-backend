@@ -301,4 +301,180 @@ router.get('/transactions', async (req: Request, res: Response) => {
     }
 });
 
+// ==================== REPORTS ====================
+
+/**
+ * GET /api/admin/reports/revenue
+ * Revenue report with optional date range
+ */
+router.get('/reports/revenue', async (req: Request, res: Response) => {
+    try {
+        const result = await AdminService.getRevenueReport(
+            req.query.from as string,
+            req.query.to as string
+        );
+        return success(res, result);
+    } catch (err: any) {
+        return error(res, 'INTERNAL_ERROR', err.message);
+    }
+});
+
+/**
+ * GET /api/admin/reports/users
+ * User growth report
+ */
+router.get('/reports/users', async (req: Request, res: Response) => {
+    try {
+        const result = await AdminService.getUserGrowthReport(
+            req.query.from as string,
+            req.query.to as string
+        );
+        return success(res, result);
+    } catch (err: any) {
+        return error(res, 'INTERNAL_ERROR', err.message);
+    }
+});
+
+/**
+ * GET /api/admin/reports/goals
+ * Goals breakdown report
+ */
+router.get('/reports/goals', async (req: Request, res: Response) => {
+    try {
+        const result = await AdminService.getGoalReport();
+        return success(res, result);
+    } catch (err: any) {
+        return error(res, 'INTERNAL_ERROR', err.message);
+    }
+});
+
+/**
+ * GET /api/admin/reports/transactions
+ * Transaction summary report
+ */
+router.get('/reports/transactions', async (req: Request, res: Response) => {
+    try {
+        const result = await AdminService.getTransactionSummary(
+            req.query.from as string,
+            req.query.to as string
+        );
+        return success(res, result);
+    } catch (err: any) {
+        return error(res, 'INTERNAL_ERROR', err.message);
+    }
+});
+
+// ==================== COMPLIANCE ====================
+
+/**
+ * GET /api/admin/compliance/overview
+ * Compliance dashboard overview
+ */
+router.get('/compliance/overview', async (req: Request, res: Response) => {
+    try {
+        const result = await AdminService.getComplianceOverview();
+        return success(res, result);
+    } catch (err: any) {
+        return error(res, 'INTERNAL_ERROR', err.message);
+    }
+});
+
+/**
+ * GET /api/admin/compliance/audit-trail
+ * Paginated audit logs
+ */
+router.get('/compliance/audit-trail', async (req: Request, res: Response) => {
+    try {
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 50;
+        const result = await AdminService.getAuditTrail(page, limit, {
+            action: req.query.action as string,
+            entityType: req.query.entityType as string,
+            userId: req.query.userId as string
+        });
+        return success(res, result);
+    } catch (err: any) {
+        return error(res, 'INTERNAL_ERROR', err.message);
+    }
+});
+
+/**
+ * GET /api/admin/compliance/flagged
+ * Flagged and suspended accounts
+ */
+router.get('/compliance/flagged', async (req: Request, res: Response) => {
+    try {
+        const result = await AdminService.getFlaggedAccounts();
+        return success(res, result);
+    } catch (err: any) {
+        return error(res, 'INTERNAL_ERROR', err.message);
+    }
+});
+
+// ==================== REFUNDS ====================
+
+/**
+ * GET /api/admin/refunds
+ * List refund requests with optional status filter
+ */
+router.get('/refunds', async (req: Request, res: Response) => {
+    try {
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 20;
+        const result = await AdminService.listRefundRequests(
+            req.query.status as string,
+            page,
+            limit
+        );
+        return success(res, result);
+    } catch (err: any) {
+        return error(res, 'INTERNAL_ERROR', err.message);
+    }
+});
+
+/**
+ * GET /api/admin/refunds/stats
+ * Refund statistics
+ */
+router.get('/refunds/stats', async (req: Request, res: Response) => {
+    try {
+        const result = await AdminService.getRefundStats();
+        return success(res, result);
+    } catch (err: any) {
+        return error(res, 'INTERNAL_ERROR', err.message);
+    }
+});
+
+/**
+ * PATCH /api/admin/refunds/:id/process
+ * Approve or reject a refund request
+ */
+router.patch('/refunds/:id/process', async (req: Request, res: Response) => {
+    try {
+        const { status, note } = req.body;
+        if (!['APPROVED', 'REJECTED'].includes(status)) {
+            return error(res, 'VALIDATION_ERROR', 'Status must be APPROVED or REJECTED', 400);
+        }
+        const result = await AdminService.processRefund(req.params.id, status, note, req.user!.id);
+        return success(res, result);
+    } catch (err: any) {
+        return error(res, err.code || 'INTERNAL_ERROR', err.message, err.statusCode || 500);
+    }
+});
+
+// ==================== PLATFORM SETTINGS ====================
+
+/**
+ * GET /api/admin/settings
+ * Get platform configuration
+ */
+router.get('/settings', async (req: Request, res: Response) => {
+    try {
+        const result = await AdminService.getPlatformConfig();
+        return success(res, result);
+    } catch (err: any) {
+        return error(res, 'INTERNAL_ERROR', err.message);
+    }
+});
+
 export default router;

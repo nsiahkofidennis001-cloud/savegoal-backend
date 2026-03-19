@@ -43,6 +43,18 @@ export function dashboardLayout(title: string, activePage: string, content: stri
             <a href="/admin/activity" class="${activePage === 'activity' ? 'active' : ''}">
                 <i class="ri-time-line"></i><span>Activity</span>
             </a>
+            <a href="/admin/reports" class="${activePage === 'reports' ? 'active' : ''}">
+                <i class="ri-bar-chart-box-line"></i><span>Reports</span>
+            </a>
+            <a href="/admin/compliance" class="${activePage === 'compliance' ? 'active' : ''}">
+                <i class="ri-file-shield-2-line"></i><span>Compliance</span>
+            </a>
+            <a href="/admin/refunds" class="${activePage === 'refunds' ? 'active' : ''}">
+                <i class="ri-refund-2-line"></i><span>Returns/Refunds</span>
+            </a>
+            <a href="/admin/settings" class="${activePage === 'settings' ? 'active' : ''}">
+                <i class="ri-settings-3-line"></i><span>Settings</span>
+            </a>
         </nav>
         <div class="sidebar-footer">
             <a href="/api-docs" target="_blank"><i class="ri-file-code-line"></i><span>API Docs</span></a>

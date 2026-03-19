@@ -6,6 +6,10 @@ import { kycPage } from './pages/kyc.js';
 import { merchantsPage } from './pages/merchants.js';
 import { transactionsPage } from './pages/transactions.js';
 import { activityPage } from './pages/activity.js';
+import { reportsPage } from './pages/reports.js';
+import { compliancePage } from './pages/compliance.js';
+import { refundsPage } from './pages/refunds.js';
+import { settingsPage } from './pages/settings.js';
 
 const router = Router();
 
@@ -38,6 +42,22 @@ router.get('/transactions', (_req: Request, res: Response) => {
 
 router.get('/activity', (_req: Request, res: Response) => {
     sendPage(res, 'Activity Feed', 'activity', activityPage());
+});
+
+router.get('/reports', (_req: Request, res: Response) => {
+    sendPage(res, 'Reports', 'reports', reportsPage());
+});
+
+router.get('/compliance', (_req: Request, res: Response) => {
+    sendPage(res, 'Compliance', 'compliance', compliancePage());
+});
+
+router.get('/refunds', (_req: Request, res: Response) => {
+    sendPage(res, 'Returns / Refunds', 'refunds', refundsPage());
+});
+
+router.get('/settings', (_req: Request, res: Response) => {
+    sendPage(res, 'Platform Settings', 'settings', settingsPage());
 });
 
 export default router;

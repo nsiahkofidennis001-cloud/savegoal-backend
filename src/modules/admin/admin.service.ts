@@ -797,4 +797,438 @@ export class AdminService {
 
         return updated;
     }
+
+    // ==================== REPORTS ====================
+
+    /**
+     * Revenue report: deposits, goal fundings, payouts by date range
+     */
+    static async getRevenueReport(startDate?: string, endDate?: string) {
+        const where: any = { status: 'COMPLETED' };
+        if (startDate || endDate) {
+            where.createdAt = {};
+            if (startDate) where.createdAt.gte = new Date(startDate);
+            if (endDate) where.createdAt.lte = new Date(endDate);
+        }
+
+        const [deposits, goalFundings, payouts, totalRevenue] = await Promise.all([
+            prisma.transaction.aggregate({
+                where: { ...where, type: 'DEPOSIT' },
+                _sum: { amount: true },
+                _count: true
+            }),
+            prisma.transaction.aggregate({
+                where: { ...where, type: 'GOAL_FUNDING' },
+                _sum: { amount: true },
+                _count: true
+            }),
+            prisma.transaction.aggregate({
+                where: { ...where, type: 'MERCHANT_PAYOUT' },
+                _sum: { amount: true },
+                _count: true
+            }),
+            prisma.transaction.aggregate({
+                where,
+                _sum: { amount: true },
+                _count: true
+            })
+        ]);
+
+        return {
+            period: { from: startDate || 'all-time', to: endDate || 'now' },
+            deposits: { total: deposits._sum.amount || 0, count: deposits._count },
+            goalFundings: { total: goalFundings._sum.amount || 0, count: goalFundings._count },
+            payouts: { total: payouts._sum.amount || 0, count: payouts._count },
+            overall: { total: totalRevenue._sum.amount || 0, count: totalRevenue._count }
+        };
+    }
+
+    /**
+     * User growth report: signups over a period
+     */
+    static async getUserGrowthReport(startDate?: string, endDate?: string) {
+        const where: any = {};
+        if (startDate || endDate) {
+            where.createdAt = {};
+            if (startDate) where.createdAt.gte = new Date(startDate);
+            if (endDate) where.createdAt.lte = new Date(endDate);
+        }
+
+        const [totalUsers, consumers, merchants, admins] = await Promise.all([
+            prisma.user.count({ where }),
+            prisma.user.count({ where: { ...where, role: 'CONSUMER' } }),
+            prisma.user.count({ where: { ...where, role: 'MERCHANT' } }),
+            prisma.user.count({ where: { ...where, role: 'ADMIN' } }),
+        ]);
+
+        return {
+            period: { from: startDate || 'all-time', to: endDate || 'now' },
+            totalUsers,
+            breakdown: { consumers, merchants, admins }
+        };
+    }
+
+    /**
+     * Goals report: breakdown by status and category
+     */
+    static async getGoalReport() {
+        const [byStatus, byCategory, totalSaved] = await Promise.all([
+            prisma.goal.groupBy({
+                by: ['status'],
+                _count: true,
+                _sum: { currentAmount: true }
+            }),
+            prisma.goal.groupBy({
+                by: ['category'],
+                _count: true,
+                _sum: { currentAmount: true }
+            }),
+            prisma.goal.aggregate({
+                _sum: { currentAmount: true, targetAmount: true }
+            })
+        ]);
+
+        return {
+            byStatus: byStatus.map(s => ({
+                status: s.status,
+                count: s._count,
+                totalSaved: s._sum.currentAmount || 0
+            })),
+            byCategory: byCategory.map(c => ({
+                category: c.category,
+                count: c._count,
+                totalSaved: c._sum.currentAmount || 0
+            })),
+            overall: {
+                totalSaved: totalSaved._sum.currentAmount || 0,
+                totalTarget: totalSaved._sum.targetAmount || 0
+            }
+        };
+    }
+
+    /**
+     * Transaction summary report by type and status
+     */
+    static async getTransactionSummary(startDate?: string, endDate?: string) {
+        const where: any = {};
+        if (startDate || endDate) {
+            where.createdAt = {};
+            if (startDate) where.createdAt.gte = new Date(startDate);
+            if (endDate) where.createdAt.lte = new Date(endDate);
+        }
+
+        const [byType, byStatus, totalVolume] = await Promise.all([
+            prisma.transaction.groupBy({
+                by: ['type'],
+                where,
+                _count: true,
+                _sum: { amount: true }
+            }),
+            prisma.transaction.groupBy({
+                by: ['status'],
+                where,
+                _count: true,
+                _sum: { amount: true }
+            }),
+            prisma.transaction.aggregate({
+                where,
+                _sum: { amount: true },
+                _count: true
+            })
+        ]);
+
+        return {
+            period: { from: startDate || 'all-time', to: endDate || 'now' },
+            byType: byType.map(t => ({
+                type: t.type,
+                count: t._count,
+                volume: t._sum.amount || 0
+            })),
+            byStatus: byStatus.map(s => ({
+                status: s.status,
+                count: s._count,
+                volume: s._sum.amount || 0
+            })),
+            totalVolume: totalVolume._sum.amount || 0,
+            totalCount: totalVolume._count
+        };
+    }
+
+    // ==================== COMPLIANCE ====================
+
+    /**
+     * Compliance overview: KYC stats, expired verifications, flagged users
+     */
+    static async getComplianceOverview() {
+        const [
+            totalProfiles,
+            pendingKyc,
+            verifiedKyc,
+            failedKyc,
+            expiredKyc,
+            suspendedUsers,
+            unverifiedMerchants,
+            totalAuditLogs
+        ] = await Promise.all([
+            prisma.profile.count(),
+            prisma.profile.count({ where: { kycStatus: 'PENDING', idNumber: { not: null } } }),
+            prisma.profile.count({ where: { kycStatus: 'VERIFIED' } }),
+            prisma.profile.count({ where: { kycStatus: 'FAILED' } }),
+            prisma.profile.count({ where: { kycStatus: 'EXPIRED' } }),
+            prisma.user.count({ where: { emailVerified: false } }),
+            prisma.merchantProfile.count({ where: { isVerified: false } }),
+            prisma.auditLog.count()
+        ]);
+
+        return {
+            kyc: {
+                totalProfiles,
+                pending: pendingKyc,
+                verified: verifiedKyc,
+                failed: failedKyc,
+                expired: expiredKyc,
+                verificationRate: totalProfiles > 0
+                    ? Math.round((verifiedKyc / totalProfiles) * 100)
+                    : 0
+            },
+            flags: {
+                suspendedUsers,
+                unverifiedMerchants
+            },
+            auditLogs: totalAuditLogs
+        };
+    }
+
+    /**
+     * Paginated audit trail with filtering
+     */
+    static async getAuditTrail(page = 1, limit = 50, filters?: {
+        action?: string;
+        entityType?: string;
+        userId?: string;
+    }) {
+        const skip = (page - 1) * limit;
+        const where: any = {};
+
+        if (filters?.action) where.action = filters.action;
+        if (filters?.entityType) where.entityType = filters.entityType;
+        if (filters?.userId) where.userId = filters.userId;
+
+        const [logs, total] = await Promise.all([
+            prisma.auditLog.findMany({
+                where,
+                skip,
+                take: limit,
+                orderBy: { createdAt: 'desc' }
+            }),
+            prisma.auditLog.count({ where })
+        ]);
+
+        return {
+            logs,
+            pagination: { total, page, limit, totalPages: Math.ceil(total / limit) }
+        };
+    }
+
+    /**
+     * Get flagged/suspended accounts
+     */
+    static async getFlaggedAccounts() {
+        const [suspended, failedKyc] = await Promise.all([
+            prisma.user.findMany({
+                where: { emailVerified: false },
+                select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    role: true,
+                    createdAt: true
+                },
+                orderBy: { createdAt: 'desc' },
+                take: 50
+            }),
+            prisma.profile.findMany({
+                where: { kycStatus: 'FAILED' },
+                include: {
+                    user: { select: { name: true, email: true, phone: true } }
+                },
+                orderBy: { updatedAt: 'desc' },
+                take: 50
+            })
+        ]);
+
+        return { suspended, failedKyc };
+    }
+
+    // ==================== REFUNDS ====================
+
+    /**
+     * List refund requests with optional status filter
+     */
+    static async listRefundRequests(status?: string, page = 1, limit = 20) {
+        const skip = (page - 1) * limit;
+        const where: any = {};
+
+        if (status && ['PENDING', 'APPROVED', 'REJECTED', 'PROCESSED'].includes(status)) {
+            where.status = status;
+        }
+
+        const [refunds, total] = await Promise.all([
+            prisma.refundRequest.findMany({
+                where,
+                skip,
+                take: limit,
+                orderBy: { createdAt: 'desc' }
+            }),
+            prisma.refundRequest.count({ where })
+        ]);
+
+        return {
+            refunds,
+            pagination: { total, page, limit, totalPages: Math.ceil(total / limit) }
+        };
+    }
+
+    /**
+     * Process (approve/reject) a refund request
+     */
+    static async processRefund(refundId: string, status: 'APPROVED' | 'REJECTED', adminNote?: string, adminUserId?: string) {
+        const refund = await prisma.refundRequest.findUnique({
+            where: { id: refundId }
+        });
+
+        if (!refund) {
+            throw new ApiException(404, 'NOT_FOUND', 'Refund request not found');
+        }
+
+        if (refund.status !== 'PENDING') {
+            throw new ApiException(400, 'BAD_REQUEST', 'Refund request is already processed');
+        }
+
+        const updated = await prisma.refundRequest.update({
+            where: { id: refundId },
+            data: {
+                status,
+                adminNote,
+                processedBy: adminUserId,
+                processedAt: new Date()
+            }
+        });
+
+        // If approved, credit the user's wallet
+        if (status === 'APPROVED') {
+            const wallet = await prisma.wallet.findUnique({
+                where: { userId: refund.userId }
+            });
+
+            if (wallet) {
+                await prisma.wallet.update({
+                    where: { id: wallet.id },
+                    data: { balance: { increment: refund.amount } }
+                });
+
+                // Create a refund transaction record
+                await prisma.transaction.create({
+                    data: {
+                        walletId: wallet.id,
+                        type: 'DEPOSIT',
+                        amount: refund.amount,
+                        status: 'COMPLETED',
+                        reference: `REFUND-${refund.id}`,
+                        metadata: {
+                            refundId: refund.id,
+                            originalTransactionId: refund.transactionId
+                        }
+                    }
+                });
+            }
+
+            // Notify user
+            await NotificationService.send({
+                userId: refund.userId,
+                title: 'Refund Approved',
+                message: `Your refund of ${refund.amount} GHS has been approved and credited to your wallet.`,
+                category: 'TRANSACTION',
+                channels: ['IN_APP', 'SMS']
+            });
+        } else {
+            // Notify user of rejection
+            await NotificationService.send({
+                userId: refund.userId,
+                title: 'Refund Rejected',
+                message: `Your refund request was declined. ${adminNote ? `Reason: ${adminNote}` : 'Contact support for more information.'}`,
+                category: 'TRANSACTION',
+                channels: ['IN_APP']
+            });
+        }
+
+        return updated;
+    }
+
+    /**
+     * Get refund statistics
+     */
+    static async getRefundStats() {
+        const [pending, approved, rejected, processed, totalAmount] = await Promise.all([
+            prisma.refundRequest.count({ where: { status: 'PENDING' } }),
+            prisma.refundRequest.count({ where: { status: 'APPROVED' } }),
+            prisma.refundRequest.count({ where: { status: 'REJECTED' } }),
+            prisma.refundRequest.count({ where: { status: 'PROCESSED' } }),
+            prisma.refundRequest.aggregate({
+                where: { status: { in: ['APPROVED', 'PROCESSED'] } },
+                _sum: { amount: true }
+            })
+        ]);
+
+        return {
+            pending,
+            approved,
+            rejected,
+            processed,
+            totalRefundedGHS: totalAmount._sum.amount || 0,
+            total: pending + approved + rejected + processed
+        };
+    }
+
+    // ==================== PLATFORM SETTINGS ====================
+
+    /**
+     * Get platform configuration (safe-to-display values)
+     */
+    static async getPlatformConfig() {
+        const [userCount, merchantCount, transactionCount] = await Promise.all([
+            prisma.user.count(),
+            prisma.merchantProfile.count(),
+            prisma.transaction.count()
+        ]);
+
+        return {
+            platform: {
+                name: 'SaveGoal',
+                version: '1.0.0',
+                environment: process.env.NODE_ENV || 'development',
+                currency: 'GHS'
+            },
+            features: {
+                smsNotifications: !!process.env.TWILIO_ACCOUNT_SID,
+                whatsappNotifications: !!process.env.TWILIO_ACCOUNT_SID,
+                emailNotifications: !!process.env.SENDGRID_API_KEY,
+                paystack: !!process.env.PAYSTACK_SECRET_KEY,
+                kycEnabled: true,
+                recurringAutoSavings: true,
+                publicContributions: true
+            },
+            stats: {
+                totalUsers: userCount,
+                totalMerchants: merchantCount,
+                totalTransactions: transactionCount
+            },
+            integrations: {
+                twilio: process.env.TWILIO_ACCOUNT_SID ? 'Connected' : 'Not configured',
+                paystack: process.env.PAYSTACK_SECRET_KEY ? 'Connected' : 'Not configured',
+                sendgrid: process.env.SENDGRID_API_KEY ? 'Connected' : 'Not configured',
+                betterAuth: process.env.BETTER_AUTH_URL || 'Not configured'
+            }
+        };
+    }
 }

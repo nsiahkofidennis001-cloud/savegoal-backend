@@ -26,6 +26,7 @@ import adminDashboardRoutes from '../modules/admin/dashboard/index.js';
 import kycRoutes from '../modules/kyc/kyc.routes.js';
 import payoutRoutes from '../modules/wallet/payout.routes.js';
 import notificationRoutes from '../modules/notifications/notification.routes.js';
+import settingsRoutes from '../modules/settings/settings.routes.js';
 
 const app = express();
 
@@ -132,6 +133,9 @@ app.use('/api/payouts', payoutRoutes);
 
 // Notification routes
 app.use('/api/notifications', notificationRoutes);
+
+// Settings routes
+app.use('/api/settings', settingsRoutes);
 
 // ==================== ERROR HANDLING ====================
 
