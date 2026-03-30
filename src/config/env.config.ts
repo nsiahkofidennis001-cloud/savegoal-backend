@@ -26,6 +26,7 @@ const envSchema = z.object({
     // SendGrid
     SENDGRID_API_KEY: z.string().optional(),
     FROM_EMAIL: z.string().email().optional(),
+    ALLOWED_ORIGINS: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

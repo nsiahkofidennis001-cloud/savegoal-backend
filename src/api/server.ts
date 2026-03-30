@@ -42,15 +42,18 @@ app.use(
 );
 
 // CORS
+const allowedOrigins = env.NODE_ENV === 'production'
+    ? [
+        'https://savegoal.com',
+        'https://save-goal-frontend.vercel.app',
+        'https://savegoal-backend.onrender.com', // Correct Render URL
+        ...(env.ALLOWED_ORIGINS ? env.ALLOWED_ORIGINS.split(',').map(o => o.trim()) : [])
+    ]
+    : '*';
+
 app.use(
     cors({
-        origin: env.NODE_ENV === 'production'
-            ? [
-                'https://savegoal.com',
-                'https://save-goal-frontend.vercel.app',
-                'https://savegoal-backend-2.onrender.com' // Allow Swagger UI
-            ]
-            : '*',
+        origin: allowedOrigins,
         credentials: true,
     })
 );

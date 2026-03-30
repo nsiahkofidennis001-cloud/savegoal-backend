@@ -9,6 +9,11 @@ export const auth = betterAuth({
     database: prismaAdapter(prisma, {
         provider: 'postgresql',
     }),
+    trustedOrigins: [
+        'https://savegoal.com',
+        'https://save-goal-frontend.vercel.app',
+        'https://savegoal-backend.onrender.com',
+    ],
 
     emailAndPassword: {
         enabled: true,

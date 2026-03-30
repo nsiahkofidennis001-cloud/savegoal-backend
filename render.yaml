@@ -17,6 +17,8 @@ services:
         sync: false
       - key: BETTER_AUTH_URL
         value: https://savegoal-backend.onrender.com
+      - key: ALLOWED_ORIGINS
+        sync: false
       - key: NODE_ENV
         value: production
       - key: PORT
