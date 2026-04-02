@@ -195,7 +195,14 @@ export class GoalsService {
             // 1. Get Goal & Verify
             const goal = await tx.goal.findUnique({
                 where: { id: goalId },
-                include: { product: { include: { merchant: true } } }
+                include: {
+                    product: { include: { merchant: true } },
+                    user: {
+                        include: {
+                            profile: true,
+                        },
+                    },
+                }
             });
 
             if (!goal || goal.userId !== userId) {
@@ -228,6 +235,7 @@ export class GoalsService {
             const transaction = await tx.transaction.create({
                 data: {
                     walletId: (await tx.wallet.findUnique({ where: { userId } }))!.id,
+                    merchantProfileId: goal.product.merchantProfileId,
                     goalId: goal.id,
                     type: 'MERCHANT_PAYOUT' as any,
                     amount: goal.currentAmount,
@@ -235,7 +243,14 @@ export class GoalsService {
                     reference: `PAYOUT-${goal.id}-${Date.now()}`,
                     metadata: {
                         merchantId: goal.product.merchantProfileId,
-                        productId: goal.productId
+                        entryType: 'MERCHANT_ORDER',
+                        productId: goal.productId,
+                        productName: goal.product.name,
+                        customerName: goal.user.name,
+                        customerEmail: goal.user.email,
+                        customerPhone: goal.user.phone,
+                        shippingAddress: goal.user.profile?.address,
+                        orderStatus: 'PROCESSING',
                     }
                 }
             });
