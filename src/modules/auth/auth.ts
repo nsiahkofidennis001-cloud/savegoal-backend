@@ -12,7 +12,7 @@ export const auth = betterAuth({
     trustedOrigins: [
         'https://savegoal.com',
         'https://save-goal-frontend.vercel.app',
-        'https://savegoal-backend.onrender.com',
+        'https://savegoal-backend-2.onrender.com',
     ],
 
     emailAndPassword: {
