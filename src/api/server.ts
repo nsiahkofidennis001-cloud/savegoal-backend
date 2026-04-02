@@ -49,7 +49,8 @@ const defaultAllowedOrigins = env.NODE_ENV === 'production'
     ? [
         'https://savegoal.com',
         'https://save-goal-frontend.vercel.app',
-        'https://savegoal-backend.onrender.com',
+        'https://savegoal-backend-2.onrender.com', // Correct Render URL
+        ...(env.ALLOWED_ORIGINS ? env.ALLOWED_ORIGINS.split(',').map(o => o.trim()) : [])
     ]
     : [
         'http://localhost:3000',

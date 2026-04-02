@@ -16,7 +16,7 @@ services:
       - key: BETTER_AUTH_SECRET
         sync: false
       - key: BETTER_AUTH_URL
-        value: https://savegoal-backend.onrender.com
+        value: https://savegoal-backend-2.onrender.com
       - key: ALLOWED_ORIGINS
         sync: false
       - key: NODE_ENV
