@@ -4,7 +4,7 @@ export async function seedExpandedProducts() {
     console.log('🚀 Starting Expanded Product Seeding...');
 
     try {
-        let merchant = await prisma.merchantProfile.findFirst();
+        const merchant = await prisma.merchantProfile.findFirst();
         if (!merchant) throw new Error('Merchant not found. Run basic seed first.');
 
         const expandedProducts = [

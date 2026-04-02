@@ -1,6 +1,5 @@
 import { prisma } from '../../infra/prisma.client.js';
 import { ApiException } from '../../shared/exceptions/api.exception.js';
-import { Decimal } from '@prisma/client/runtime/library';
 
 export class WalletService {
     /**

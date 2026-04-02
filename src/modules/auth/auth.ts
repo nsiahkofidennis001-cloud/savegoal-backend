@@ -3,7 +3,6 @@ import { bearer } from 'better-auth/plugins';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { prisma } from '../../infra/prisma.client.js';
 import { CONSTANTS } from '../../config/constants.js';
-import { randomUUID } from 'node:crypto';
 import { env } from '../../config/env.config.js';
 
 const defaultTrustedOrigins = env.NODE_ENV === 'production'
