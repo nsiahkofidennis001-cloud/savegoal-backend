@@ -229,7 +229,7 @@ export class GoalsService {
                     data: {
                         walletId: wallet.id,
                         goalId: goal.id,
-                        type: 'GOAL_WITHDRAWAL',
+                        type: 'GOAL_WITHDRAWAL' as any,
                         amount: refundAmount,
                         status: 'COMPLETED',
                         reference: `CANCEL-REFUND-${goal.id}-${Date.now()}`
@@ -241,7 +241,7 @@ export class GoalsService {
                     data: {
                         walletId: wallet.id,
                         goalId: goal.id,
-                        type: 'CANCEL_PENALTY',
+                        type: 'CANCEL_PENALTY' as any,
                         amount: penaltyAmount,
                         status: 'COMPLETED',
                         reference: `CANCEL-PENALTY-${goal.id}-${Date.now()}`
