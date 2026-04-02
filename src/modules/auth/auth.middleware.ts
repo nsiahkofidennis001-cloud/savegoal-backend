@@ -3,12 +3,10 @@ import { auth, User, Session } from './auth.js';
 import { fromNodeHeaders } from 'better-auth/node';
 
 // Extend Express Request type
-declare global {
-    namespace Express {
-        interface Request {
-            user?: User;
-            session?: Session;
-        }
+declare module 'express-serve-static-core' {
+    interface Request {
+        user?: User;
+        session?: Session;
     }
 }
 

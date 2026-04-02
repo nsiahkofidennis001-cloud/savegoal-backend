@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 const envSchema = z.object({
     // Server
-    PORT: z.string().default('3000'),
+    PORT: z.string().default('4308'),
     NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
 
     // Database

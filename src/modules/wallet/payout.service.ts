@@ -22,8 +22,20 @@ export class PayoutService {
                 throw new ApiException(404, 'NOT_FOUND', 'Merchant profile not found');
             }
 
-            if (!merchant.user.wallet) {
-                throw new ApiException(404, 'NOT_FOUND', 'Merchant wallet not found');
+            let wallet = merchant.user.wallet;
+
+            if (!wallet) {
+                wallet = await tx.wallet.create({
+                    data: {
+                        userId,
+                        currency: 'GHS',
+                        balance: 0,
+                    }
+                });
+            }
+
+            if (!merchant.bankName || !merchant.bankAccountNo || !merchant.bankAccountName) {
+                throw new ApiException(400, 'VALIDATION_ERROR', 'Add payout bank details before requesting a payout');
             }
 
             if (merchant.balance.lessThan(amount)) {
@@ -39,13 +51,14 @@ export class PayoutService {
             // 2. Create PENDING transaction linked to merchant profile
             return tx.transaction.create({
                 data: {
-                    walletId: merchant.user.wallet.id,
+                    walletId: wallet.id,
                     merchantProfileId: merchant.id,
                     type: TransactionType.MERCHANT_PAYOUT,
                     amount: amount,
                     status: TransactionStatus.PENDING,
                     reference: `PO-${Date.now()}`,
                     metadata: {
+                        entryType: 'PAYOUT_REQUEST',
                         requestedAt: new Date(),
                         bankName: merchant.bankName,
                         accountNo: merchant.bankAccountNo,
