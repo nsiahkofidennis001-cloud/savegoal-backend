@@ -1,5 +1,4 @@
 import { prisma } from '../../infra/prisma.client.js';
-import { ApiException } from '../../shared/exceptions/api.exception.js';
 import { TransactionType } from '@prisma/client';
 
 export class AutomationService {

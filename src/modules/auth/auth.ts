@@ -3,17 +3,32 @@ import { bearer } from 'better-auth/plugins';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { prisma } from '../../infra/prisma.client.js';
 import { CONSTANTS } from '../../config/constants.js';
-import { randomUUID } from 'node:crypto';
+import { env } from '../../config/env.config.js';
+
+const defaultTrustedOrigins = env.NODE_ENV === 'production'
+    ? [
+        'https://savegoal.com',
+        'https://save-goal-frontend.vercel.app',
+        'https://savegoal-backend.onrender.com',
+    ]
+    : [
+        'http://localhost:3000',
+        'http://127.0.0.1:3000',
+        'http://localhost:3001',
+        'http://127.0.0.1:3001',
+    ];
+
+const configuredTrustedOrigins = env.ALLOWED_ORIGINS
+    ? env.ALLOWED_ORIGINS.split(',').map((origin) => origin.trim()).filter(Boolean)
+    : [];
+
+const trustedOrigins = [...new Set([...defaultTrustedOrigins, ...configuredTrustedOrigins])];
 
 export const auth = betterAuth({
     database: prismaAdapter(prisma, {
         provider: 'postgresql',
     }),
-    trustedOrigins: [
-        'https://savegoal.com',
-        'https://save-goal-frontend.vercel.app',
-        'https://savegoal-backend.onrender.com',
-    ],
+    trustedOrigins,
 
     emailAndPassword: {
         enabled: true,

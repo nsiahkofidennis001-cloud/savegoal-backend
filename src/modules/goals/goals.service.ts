@@ -1,7 +1,5 @@
 import { prisma } from '../../infra/prisma.client.js';
 import { ApiException } from '../../shared/exceptions/api.exception.js';
-import { Decimal } from '@prisma/client/runtime/library';
-import { WalletService } from '../wallet/wallet.service.js';
 import { NotificationService } from '../notifications/notification.service.js';
 
 export class GoalsService {
@@ -65,7 +63,7 @@ export class GoalsService {
         monthlyAmount?: number;
         savingsDay?: number;
     }) {
-        const goal = await this.getGoal(userId, goalId);
+        await this.getGoal(userId, goalId);
 
         return prisma.goal.update({
             where: { id: goalId },

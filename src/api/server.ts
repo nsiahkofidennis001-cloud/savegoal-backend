@@ -131,6 +131,7 @@ app.use(authRoutes);
 app.use('/api/wallet', walletRoutes);
 
 // Goal routes
+app.use('/api/goals/public', publicGoalsRoutes);
 app.use('/api/goals', goalsRoutes);
 
 // Payment routes
