@@ -186,6 +186,92 @@ export class GoalsService {
     }
 
     /**
+     * Cancel an active goal and refund 95% of the current amount to the wallet
+     */
+    static async cancelGoal(userId: string, goalId: string) {
+        return prisma.$transaction(async (tx) => {
+            // 1. Get Goal & Verify
+            const goal = await tx.goal.findUnique({
+                where: { id: goalId }
+            });
+
+            if (!goal || goal.userId !== userId) {
+                throw new ApiException(404, 'NOT_FOUND', 'Goal not found');
+            }
+
+            if (goal.status !== 'ACTIVE') {
+                throw new ApiException(400, 'VALIDATION_ERROR', `Only ACTIVE goals can be cancelled. Current status: ${goal.status}`);
+            }
+
+            const currentAmount = goal.currentAmount;
+
+            // 2. Perform refund if there are funds
+            if (currentAmount.greaterThan(0)) {
+                const refundAmount = currentAmount.mul(0.95);
+                const penaltyAmount = currentAmount.mul(0.05);
+
+                // Find or create wallet
+                let wallet = await tx.wallet.findUnique({ where: { userId } });
+                if (!wallet) {
+                    wallet = await tx.wallet.create({
+                        data: { userId, balance: 0, currency: 'GHS' }
+                    });
+                }
+
+                // Credit Wallet
+                await tx.wallet.update({
+                    where: { id: wallet.id },
+                    data: { balance: { increment: refundAmount } }
+                });
+
+                // Create Refund Transaction
+                await tx.transaction.create({
+                    data: {
+                        walletId: wallet.id,
+                        goalId: goal.id,
+                        type: 'GOAL_WITHDRAWAL',
+                        amount: refundAmount,
+                        status: 'COMPLETED',
+                        reference: `CANCEL-REFUND-${goal.id}-${Date.now()}`
+                    }
+                });
+
+                // Create Penalty Transaction
+                await tx.transaction.create({
+                    data: {
+                        walletId: wallet.id,
+                        goalId: goal.id,
+                        type: 'CANCEL_PENALTY',
+                        amount: penaltyAmount,
+                        status: 'COMPLETED',
+                        reference: `CANCEL-PENALTY-${goal.id}-${Date.now()}`
+                    }
+                });
+            }
+
+            // 3. Mark goal as cancelled
+            const updatedGoal = await tx.goal.update({
+                where: { id: goalId },
+                data: {
+                    status: 'CANCELLED',
+                    currentAmount: 0
+                }
+            });
+
+            // 4. Notify User
+            await NotificationService.send({
+                userId,
+                title: 'Goal Cancelled',
+                message: `Your goal "${goal.name}" has been cancelled. ${currentAmount.greaterThan(0) ? '95% of your savings have been refunded to your wallet.' : ''}`,
+                category: 'GOAL_UPDATE',
+                channels: ['IN_APP']
+            });
+
+            return { status: 'success', goal: updatedGoal };
+        });
+    }
+
+    /**
      * Redeem a completed goal to pay a merchant
      */
     static async redeemGoal(userId: string, goalId: string) {

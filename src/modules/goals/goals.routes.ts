@@ -173,4 +173,30 @@ router.post('/:id/redeem', async (req: Request, res: Response) => {
     }
 });
 
+/**
+ * @swagger
+ * /goals/{id}/cancel:
+ *   post:
+ *     summary: Cancel an active goal and refund 95% to wallet
+ *     tags: [Goals]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *     responses:
+ *       200:
+ *         description: Goal cancelled and refunded successfully
+ */
+router.post('/:id/cancel', async (req: Request, res: Response) => {
+    try {
+        const userId = req.user!.id;
+        const result = await GoalsService.cancelGoal(userId, req.params.id);
+        return success(res, result);
+    } catch (err: any) {
+        return error(res, err.code || 'INTERNAL_ERROR', err.message, err.statusCode || 500);
+    }
+});
+
 export default router;
