@@ -6,6 +6,7 @@ import swaggerUi from 'swagger-ui-express';
 import { env } from '../config/env.config.js';
 import { swaggerSpec } from '../config/swagger.config.js';
 import { standardLimiter, authLimiter } from './middlewares/rateLimit.middleware.js';
+import { requestLogger } from './middlewares/logger.middleware.js';
 import { ApiException } from '../shared/exceptions/api.exception.js';
 import { error } from '../shared/utils/response.util.js';
 
@@ -26,6 +27,7 @@ import kycRoutes from '../modules/kyc/kyc.routes.js';
 import payoutRoutes from '../modules/wallet/payout.routes.js';
 import notificationRoutes from '../modules/notifications/notification.routes.js';
 import settingsRoutes from '../modules/settings/settings.routes.js';
+import usersRoutes from '../modules/users/users.routes.js';
 
 const app = express();
 
@@ -41,15 +43,35 @@ app.use(
     })
 );
 
-// CORS
-const allowedOrigins = env.NODE_ENV === 'production'
+// Keep local frontend URLs explicitly allowed in development so browser requests
+// and credentialed auth calls behave the same way as production.
+const defaultAllowedOrigins = env.NODE_ENV === 'production'
     ? [
         'https://savegoal.com',
         'https://save-goal-frontend.vercel.app',
         'https://savegoal-backend-2.onrender.com', // Correct Render URL
         ...(env.ALLOWED_ORIGINS ? env.ALLOWED_ORIGINS.split(',').map(o => o.trim()) : [])
     ]
-    : '*';
+    : [
+        'http://localhost:3000',
+        'http://127.0.0.1:3000',
+        'http://localhost:3001',
+        'http://127.0.0.1:3001',
+        'http://localhost:3002',
+        'http://127.0.0.1:3002',
+        'http://localhost:3010',
+        'http://127.0.0.1:3010',
+        'http://localhost:3110',
+        'http://127.0.0.1:3110',
+        'http://localhost:4310',
+        'http://127.0.0.1:4310',
+    ];
+
+const configuredOrigins = env.ALLOWED_ORIGINS
+    ? env.ALLOWED_ORIGINS.split(',').map((origin) => origin.trim()).filter(Boolean)
+    : [];
+
+const allowedOrigins = [...new Set([...defaultAllowedOrigins, ...configuredOrigins])];
 
 app.use(
     cors({
@@ -61,6 +83,9 @@ app.use(
 // Body parsing
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
+
+// Request logging
+app.use(requestLogger);
 
 // Rate limiting
 app.use('/api/auth', authLimiter);
@@ -107,6 +132,7 @@ app.use(authRoutes);
 app.use('/api/wallet', walletRoutes);
 
 // Goal routes
+app.use('/api/goals/public', publicGoalsRoutes);
 app.use('/api/goals', goalsRoutes);
 
 // Payment routes
@@ -135,6 +161,9 @@ app.use('/api/notifications', notificationRoutes);
 
 // Settings routes
 app.use('/api/settings', settingsRoutes);
+
+// User routes
+app.use('/api/users', usersRoutes);
 
 // ==================== ERROR HANDLING ====================
 
